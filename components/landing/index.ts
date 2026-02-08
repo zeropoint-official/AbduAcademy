@@ -1,0 +1,11 @@
+export { HeroSection } from "./hero-section";
+export { PainSection } from "./pain-section";
+export { DifferenceSection } from "./difference-section";
+export { FounderSection } from "./founder-section";
+export { OutcomesSection } from "./outcomes-section";
+export { ComparisonSection } from "./comparison-section";
+export { LeadMagnetSection } from "./lead-magnet-section";
+export { CurriculumSection } from "./curriculum-section";
+export { TestimonialsSection } from "./testimonials-section";
+export { FaqSection } from "./faq-section";
+export { FinalCtaSection } from "./final-cta-section";

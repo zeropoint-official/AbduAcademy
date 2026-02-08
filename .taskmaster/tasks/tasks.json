@@ -1,0 +1,257 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup TypeScript Interfaces and Data Models",
+        "description": "Create TypeScript type definitions for Course, Chapter, and Episode data models as specified in the PRD",
+        "details": "Create a `lib/types.ts` file with the following interfaces:\n\n```typescript\nexport interface Course {\n  id: string;\n  title: string;\n  description: string;\n  thumbnail: string;\n  totalChapters: number;\n  totalEpisodes: number;\n}\n\nexport interface Chapter {\n  id: string;\n  title: string;\n  description: string;\n  order: number;\n  episodes: Episode[];\n  isLocked: boolean;\n}\n\nexport interface Episode {\n  id: string;\n  chapterId: string;\n  title: string;\n  description: string;\n  duration: string;\n  videoUrl: string;\n  thumbnailUrl: string;\n  order: number;\n  isCompleted: boolean;\n}\n\nexport interface User {\n  id: string;\n  email: string;\n  name: string;\n  role: 'student' | 'admin';\n  progress: UserProgress;\n}\n\nexport interface UserProgress {\n  completedEpisodes: string[];\n  lastWatchedEpisodeId: string | null;\n  lastWatchedChapterId: string | null;\n}\n```\n\nEnsure all types are exported and can be imported throughout the application.",
+        "testStrategy": "Verify TypeScript compilation passes without errors. Import types in a test component to ensure they are accessible. Check that all required properties are defined according to PRD specifications.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Configure Design System and Theme Setup",
+        "description": "Set up the dark theme with gold/amber color palette using Tailwind CSS v4, configure typography, and establish the premium forex aesthetic",
+        "details": "Update `app/globals.css` and Tailwind configuration:\n\n1. Configure custom colors in Tailwind config:\n```css\n/* globals.css */\n@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n:root {\n  --background: #0a0a0a;\n  --foreground: #fafafa;\n  --card: #141414;\n  --card-foreground: #fafafa;\n  --primary: #d4af37;\n  --primary-foreground: #0a0a0a;\n  --secondary: #1a1a1a;\n  --secondary-foreground: #fafafa;\n  --accent: #f59e0b;\n  --accent-foreground: #0a0a0a;\n  --muted: #262626;\n  --muted-foreground: #a1a1aa;\n  --border: #262626;\n  --ring: #d4af37;\n}\n```\n\n2. Add custom font imports (Inter or similar modern sans-serif)\n3. Configure shadcn/ui theme to use dark mode by default\n4. Set up spacing scale and typography hierarchy\n5. Create CSS custom properties for consistent gold/amber gradients",
+        "testStrategy": "Create a test page displaying all color variables, typography scales, and spacing. Visually verify the premium dark theme aesthetic matches the Bloomberg Terminal meets modern streaming reference.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Install and Configure Framer Motion and Shadcn/ui Components",
+        "description": "Add Framer Motion for animations and set up required shadcn/ui components for the application",
+        "details": "1. Install Framer Motion:\n```bash\nnpm install framer-motion\n```\n\n2. Initialize and install shadcn/ui components needed:\n```bash\nnpx shadcn@latest init\nnpx shadcn@latest add button card input textarea form dialog dropdown-menu tabs avatar badge progress skeleton separator scroll-area\n```\n\n3. Create animation utility file `lib/animations.ts`:\n```typescript\nexport const fadeIn = {\n  initial: { opacity: 0 },\n  animate: { opacity: 1 },\n  exit: { opacity: 0 }\n};\n\nexport const slideUp = {\n  initial: { opacity: 0, y: 20 },\n  animate: { opacity: 1, y: 0 },\n  exit: { opacity: 0, y: -20 }\n};\n\nexport const staggerContainer = {\n  animate: { transition: { staggerChildren: 0.1 } }\n};\n```\n\n4. Ensure all shadcn components use the dark theme colors configured in Task 2",
+        "testStrategy": "Render each shadcn component on a test page to verify styling. Test Framer Motion animations by creating simple animated elements. Verify all components respect the dark theme.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Create Base Layout Components",
+        "description": "Build the header, footer, and sidebar navigation components that will be used across the application",
+        "details": "Create components in `components/layout/`:\n\n1. `header.tsx`:\n```typescript\n// Logo, navigation links, user menu\n// Use Phosphor Icons for icons\n// Include mobile hamburger menu\n// Gold accent on hover states\n```\n\n2. `footer.tsx`:\n```typescript\n// Minimal footer with copyright, links\n// Social media icons using Phosphor\n// Dark background with subtle border\n```\n\n3. `sidebar.tsx`:\n```typescript\n// Collapsible sidebar for course navigation\n// Chapter list with episode counts\n// Progress indicators\n// Active state highlighting with gold accent\n```\n\n4. Update `app/layout.tsx` to include base structure:\n```typescript\nimport { Header } from '@/components/layout/header';\nimport { Footer } from '@/components/layout/footer';\n\nexport default function RootLayout({ children }) {\n  return (\n    <html lang=\"en\" className=\"dark\">\n      <body className=\"bg-background text-foreground min-h-screen\">\n        <Header />\n        <main>{children}</main>\n        <Footer />\n      </body>\n    </html>\n  );\n}\n```",
+        "testStrategy": "Render layout components in isolation and as part of the main layout. Test responsive behavior at mobile, tablet, and desktop breakpoints. Verify navigation links work correctly.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Create Mock Data for Course Content",
+        "description": "Build comprehensive mock data following the sample course structure provided in the PRD appendix",
+        "details": "Create `lib/mock-data.ts` with the full course structure:\n\n```typescript\nimport { Course, Chapter, Episode } from './types';\n\nexport const mockCourse: Course = {\n  id: 'forex-mastery',\n  title: 'Abdu Academi Forex Mastery Course',\n  description: 'Master forex trading from fundamentals to advanced strategies',\n  thumbnail: '/images/course-thumbnail.jpg',\n  totalChapters: 5,\n  totalEpisodes: 20\n};\n\nexport const mockChapters: Chapter[] = [\n  {\n    id: 'chapter-1',\n    title: 'Forex Fundamentals',\n    description: 'Learn the basics of forex trading',\n    order: 1,\n    isLocked: false,\n    episodes: [\n      {\n        id: 'ep-1-1',\n        chapterId: 'chapter-1',\n        title: 'What is Forex Trading?',\n        description: 'Introduction to the forex market',\n        duration: '12:34',\n        videoUrl: 'https://sample-videos.com/video1.mp4',\n        thumbnailUrl: '/images/ep-1-1.jpg',\n        order: 1,\n        isCompleted: false\n      },\n      // ... all 4 episodes per chapter as per PRD\n    ]\n  },\n  // ... all 5 chapters\n];\n\nexport function getChapterById(id: string): Chapter | undefined;\nexport function getEpisodeById(chapterId: string, episodeId: string): Episode | undefined;\nexport function getNextEpisode(currentEpisodeId: string): Episode | null;\nexport function getPreviousEpisode(currentEpisodeId: string): Episode | null;\n```\n\nInclude helper functions for data retrieval and navigation.",
+        "testStrategy": "Write unit tests for helper functions. Verify all 5 chapters and 20 episodes are properly structured. Test getNextEpisode and getPreviousEpisode navigation logic.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Build Landing Page",
+        "description": "Create the marketing landing page with hero section, features, curriculum preview, testimonials, and CTA",
+        "details": "Create `app/(marketing)/page.tsx`:\n\n```typescript\n// Hero Section\n- Large headline: 'Master Forex Trading with Abdu Academi'\n- Subheadline with value proposition\n- CTA button with gold gradient\n- Course preview image/video thumbnail\n- Animated entrance using Framer Motion\n\n// Features Section\n- 3-4 key benefits with Phosphor icons\n- Card layout with hover effects\n- Gold accent borders\n\n// Curriculum Preview\n- Accordion or expandable chapter list\n- Show episode count per chapter\n- Teaser of content structure\n\n// Testimonials Section\n- Placeholder testimonial cards\n- Avatar, name, quote format\n- Carousel or grid layout\n\n// CTA Section\n- Final call to action\n- Enrollment button\n- Trust indicators\n```\n\nUse Framer Motion for scroll animations and staggered reveals. Ensure mobile responsiveness.",
+        "testStrategy": "Visual review of all sections at multiple breakpoints. Test all animations trigger correctly on scroll. Verify CTA buttons have proper hover states and link to course page.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Build Course Overview Page with Chapter Cards",
+        "description": "Create the main course page displaying all chapters as interactive cards with progress indicators",
+        "details": "Create `app/course/page.tsx` and `components/course/chapter-card.tsx`:\n\n```typescript\n// app/course/page.tsx\nimport { mockCourse, mockChapters } from '@/lib/mock-data';\nimport { ChapterCard } from '@/components/course/chapter-card';\n\nexport default function CoursePage() {\n  return (\n    <div className=\"container mx-auto py-8\">\n      <header className=\"mb-8\">\n        <h1>{mockCourse.title}</h1>\n        <p>{mockCourse.description}</p>\n        <div className=\"flex gap-4\">\n          <span>{mockCourse.totalChapters} Chapters</span>\n          <span>{mockCourse.totalEpisodes} Episodes</span>\n        </div>\n      </header>\n      <div className=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\">\n        {mockChapters.map(chapter => (\n          <ChapterCard key={chapter.id} chapter={chapter} />\n        ))}\n      </div>\n    </div>\n  );\n}\n\n// components/course/chapter-card.tsx\n- Display chapter title, description, episode count\n- Progress bar showing completion percentage\n- Lock icon for locked chapters\n- Hover animation with gold border glow\n- Link to chapter detail page\n```",
+        "testStrategy": "Verify all chapters render correctly from mock data. Test navigation to chapter detail pages. Check progress indicators display correctly. Test responsive grid layout.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Build Chapter Detail Page with Episode List",
+        "description": "Create the chapter page showing all episodes within a chapter with completion status and navigation",
+        "details": "Create `app/course/[chapterId]/page.tsx` and `components/course/episode-card.tsx`:\n\n```typescript\n// app/course/[chapterId]/page.tsx\nimport { getChapterById } from '@/lib/mock-data';\nimport { EpisodeCard } from '@/components/course/episode-card';\n\nexport default function ChapterPage({ params }: { params: { chapterId: string } }) {\n  const chapter = getChapterById(params.chapterId);\n  \n  return (\n    <div className=\"flex\">\n      <Sidebar chapters={mockChapters} currentChapterId={params.chapterId} />\n      <main className=\"flex-1 p-8\">\n        <header>\n          <h1>{chapter.title}</h1>\n          <p>{chapter.description}</p>\n          <ProgressBar completed={completedCount} total={chapter.episodes.length} />\n        </header>\n        <div className=\"space-y-4 mt-8\">\n          {chapter.episodes.map(episode => (\n            <EpisodeCard key={episode.id} episode={episode} />\n          ))}\n        </div>\n      </main>\n    </div>\n  );\n}\n\n// components/course/episode-card.tsx\n- Thumbnail, title, duration, description\n- Completion checkmark indicator\n- Play button overlay on hover\n- Link to video player page\n```",
+        "testStrategy": "Test dynamic routing with different chapter IDs. Verify episode list renders correctly. Test sidebar navigation highlights current chapter. Check completion indicators toggle visually.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Build Video Player Page",
+        "description": "Create the video player page with episode navigation, playback controls, and next/previous episode functionality",
+        "details": "Create `app/course/[chapterId]/[episodeId]/page.tsx` and `components/course/video-player.tsx`:\n\n```typescript\n// Install React Player\nnpm install react-player\n\n// components/course/video-player.tsx\nimport ReactPlayer from 'react-player';\n\nexport function VideoPlayer({ episode, onComplete }) {\n  return (\n    <div className=\"aspect-video bg-black rounded-lg overflow-hidden\">\n      <ReactPlayer\n        url={episode.videoUrl}\n        width=\"100%\"\n        height=\"100%\"\n        controls\n        onEnded={onComplete}\n        config={{\n          file: { attributes: { controlsList: 'nodownload' } }\n        }}\n      />\n    </div>\n  );\n}\n\n// app/course/[chapterId]/[episodeId]/page.tsx\n- Video player component (full width)\n- Episode title and description below\n- Previous/Next episode navigation buttons\n- Episode list sidebar (collapsible on mobile)\n- Mark as complete button\n- Auto-advance to next episode option\n```\n\nUse placeholder video URLs (sample-videos.com or similar) for demo.",
+        "testStrategy": "Test video playback with placeholder videos. Verify previous/next navigation works correctly including chapter boundaries. Test mark as complete functionality updates UI. Check responsive layout on mobile.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Build Progress Tracking Components",
+        "description": "Create visual progress indicators including progress bars, completion badges, and resume functionality",
+        "details": "Create `components/course/progress-bar.tsx` and progress utilities:\n\n```typescript\n// components/course/progress-bar.tsx\nexport function ProgressBar({ completed, total, showPercentage = true }) {\n  const percentage = Math.round((completed / total) * 100);\n  return (\n    <div className=\"w-full\">\n      <div className=\"h-2 bg-muted rounded-full overflow-hidden\">\n        <div \n          className=\"h-full bg-gradient-to-r from-primary to-accent transition-all\"\n          style={{ width: `${percentage}%` }}\n        />\n      </div>\n      {showPercentage && <span className=\"text-sm text-muted-foreground\">{percentage}%</span>}\n    </div>\n  );\n}\n\n// components/course/completion-badge.tsx\n- Checkmark icon with gold color when complete\n- Empty circle when incomplete\n- Animated transition on completion\n\n// lib/progress.ts (client-side state for demo)\n- Store progress in localStorage for demo\n- Functions: markEpisodeComplete, getProgress, getLastWatched\n- Resume from last position functionality\n```",
+        "testStrategy": "Test progress bar renders correctly at 0%, 50%, 100%. Verify localStorage persistence works for demo. Test resume functionality returns to correct episode.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Build Admin Layout and Dashboard",
+        "description": "Create the admin dashboard layout with sidebar navigation and overview stats cards",
+        "details": "Create admin layout and dashboard:\n\n```typescript\n// app/admin/layout.tsx\nexport default function AdminLayout({ children }) {\n  return (\n    <div className=\"flex min-h-screen\">\n      <AdminSidebar />\n      <main className=\"flex-1 p-8 bg-background\">\n        {children}\n      </main>\n    </div>\n  );\n}\n\n// components/admin/admin-sidebar.tsx\n- Logo/brand\n- Navigation links: Dashboard, Chapters, Episodes\n- Preview course link\n- Logout button (placeholder)\n\n// app/admin/page.tsx\nimport { StatsCard } from '@/components/admin/stats-card';\n\nexport default function AdminDashboard() {\n  return (\n    <div>\n      <h1>Dashboard</h1>\n      <div className=\"grid gap-6 md:grid-cols-3\">\n        <StatsCard title=\"Total Chapters\" value={5} icon={<BookOpen />} />\n        <StatsCard title=\"Total Episodes\" value={20} icon={<PlayCircle />} />\n        <StatsCard title=\"Total Duration\" value=\"8h 45m\" icon={<Clock />} />\n      </div>\n      <RecentActivity />\n    </div>\n  );\n}\n\n// components/admin/stats-card.tsx\n- Icon, title, value display\n- Dark card with gold accent border\n- Hover effect\n```",
+        "testStrategy": "Verify admin layout renders correctly with sidebar. Test navigation between admin pages. Check stats cards display mock data correctly. Verify admin routes are separate from student routes.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Build Chapter Management Interface",
+        "description": "Create the admin interface for listing, adding, editing, and reordering chapters",
+        "details": "Create `app/admin/chapters/page.tsx` and related components:\n\n```typescript\n// app/admin/chapters/page.tsx\nexport default function ChapterManagement() {\n  return (\n    <div>\n      <header className=\"flex justify-between items-center mb-8\">\n        <h1>Manage Chapters</h1>\n        <Button onClick={openAddDialog}>\n          <Plus /> Add Chapter\n        </Button>\n      </header>\n      <ChapterList chapters={mockChapters} />\n    </div>\n  );\n}\n\n// components/admin/chapter-list.tsx\n- Draggable list for reordering (use @dnd-kit/core)\n- Each row: order number, title, episode count, actions\n- Edit and delete buttons\n- Drag handle for reordering\n\n// components/admin/chapter-form.tsx\n- Form fields: title, description, order, isLocked\n- Use shadcn Form components\n- Validation with zod\n- Submit handler (console.log for demo)\n\n// Dialog for add/edit\n- Modal dialog using shadcn Dialog\n- Pre-fill form for edit mode\n```",
+        "testStrategy": "Test add chapter form validation. Verify edit pre-fills existing data. Test drag-and-drop reordering updates order visually. Verify delete confirmation dialog works.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Build Episode Management Interface",
+        "description": "Create the admin interface for managing episodes including upload placeholder functionality",
+        "details": "Create `app/admin/episodes/page.tsx` and related components:\n\n```typescript\n// app/admin/episodes/page.tsx\nexport default function EpisodeManagement() {\n  return (\n    <div>\n      <header className=\"flex justify-between items-center mb-8\">\n        <h1>Manage Episodes</h1>\n        <Button onClick={openAddDialog}>\n          <Plus /> Add Episode\n        </Button>\n      </header>\n      <ChapterFilter chapters={mockChapters} />\n      <EpisodeList episodes={filteredEpisodes} />\n    </div>\n  );\n}\n\n// components/admin/episode-form.tsx\n- Form fields: title, description, duration, chapterId (select), order\n- Video upload placeholder:\n  ```typescript\n  <div className=\"border-2 border-dashed border-muted rounded-lg p-8 text-center\">\n    <Upload className=\"mx-auto mb-4\" />\n    <p>Drag and drop video file or click to browse</p>\n    <p className=\"text-sm text-muted-foreground\">Video upload coming soon</p>\n  </div>\n  ```\n- Thumbnail upload placeholder\n- Preview video URL input (for demo with external URLs)\n\n// components/admin/episode-list.tsx\n- Table view with columns: thumbnail, title, chapter, duration, actions\n- Filter by chapter dropdown\n- Bulk actions placeholder\n```",
+        "testStrategy": "Test episode form validation including chapter selection. Verify filter by chapter works correctly. Test upload placeholder displays correctly. Verify episode list shows correct chapter association.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          11,
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Animations and Micro-interactions",
+        "description": "Add Framer Motion animations throughout the application for a premium feel",
+        "details": "Enhance all pages with animations:\n\n```typescript\n// Page transitions\nimport { motion } from 'framer-motion';\n\nexport function PageWrapper({ children }) {\n  return (\n    <motion.div\n      initial={{ opacity: 0, y: 20 }}\n      animate={{ opacity: 1, y: 0 }}\n      exit={{ opacity: 0, y: -20 }}\n      transition={{ duration: 0.3 }}\n    >\n      {children}\n    </motion.div>\n  );\n}\n\n// Card hover effects\n<motion.div\n  whileHover={{ scale: 1.02, borderColor: 'var(--primary)' }}\n  transition={{ type: 'spring', stiffness: 300 }}\n>\n\n// Staggered list animations\nconst container = {\n  hidden: { opacity: 0 },\n  show: {\n    opacity: 1,\n    transition: { staggerChildren: 0.1 }\n  }\n};\n\n// Button interactions\n<motion.button\n  whileHover={{ scale: 1.05 }}\n  whileTap={{ scale: 0.95 }}\n>\n\n// Progress bar animations\n<motion.div\n  initial={{ width: 0 }}\n  animate={{ width: `${percentage}%` }}\n  transition={{ duration: 0.5, ease: 'easeOut' }}\n/>\n\n// Skeleton loading states\n- Pulse animation on skeleton components\n- Smooth transition from skeleton to content\n```",
+        "testStrategy": "Visual review of all animations. Test performance with React DevTools Profiler. Verify animations don't cause layout shifts. Test reduced motion preference is respected.",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          7,
+          8,
+          9,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Loading States and Skeletons",
+        "description": "Add loading skeletons and states throughout the application for professional polish",
+        "details": "Create skeleton components and loading states:\n\n```typescript\n// components/skeletons/chapter-card-skeleton.tsx\nexport function ChapterCardSkeleton() {\n  return (\n    <div className=\"rounded-lg border border-muted p-6\">\n      <Skeleton className=\"h-6 w-3/4 mb-4\" />\n      <Skeleton className=\"h-4 w-full mb-2\" />\n      <Skeleton className=\"h-4 w-2/3 mb-4\" />\n      <Skeleton className=\"h-2 w-full\" />\n    </div>\n  );\n}\n\n// components/skeletons/episode-card-skeleton.tsx\n// components/skeletons/video-player-skeleton.tsx\n// components/skeletons/stats-card-skeleton.tsx\n\n// Loading page components\n// app/course/loading.tsx\nexport default function CourseLoading() {\n  return (\n    <div className=\"container mx-auto py-8\">\n      <Skeleton className=\"h-10 w-1/2 mb-4\" />\n      <Skeleton className=\"h-6 w-3/4 mb-8\" />\n      <div className=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\">\n        {[...Array(6)].map((_, i) => (\n          <ChapterCardSkeleton key={i} />\n        ))}\n      </div>\n    </div>\n  );\n}\n\n// Simulate loading with setTimeout for demo\n// Add Suspense boundaries where appropriate\n```",
+        "testStrategy": "Test loading states appear correctly during simulated delays. Verify skeletons match the dimensions of actual content. Test Suspense boundaries work correctly with Next.js App Router.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8,
+          9,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Mobile Responsiveness and Final Polish",
+        "description": "Ensure full mobile responsiveness across all pages and add final UI polish",
+        "details": "Comprehensive responsive design pass:\n\n```typescript\n// Mobile navigation\n- Hamburger menu for header on mobile\n- Slide-out drawer for course sidebar\n- Bottom navigation bar option for key actions\n\n// Responsive breakpoints\n- Mobile: < 640px (single column, stacked layouts)\n- Tablet: 640px - 1024px (2 columns, adjusted spacing)\n- Desktop: > 1024px (full layout with sidebars)\n\n// Video player mobile\n- Full-width video on mobile\n- Collapsible episode list below video\n- Swipe gestures for next/previous\n\n// Admin mobile\n- Collapsible sidebar\n- Responsive tables (card view on mobile)\n- Touch-friendly form inputs\n\n// Final polish checklist\n- Consistent spacing using Tailwind spacing scale\n- Focus states for accessibility\n- Hover states only on non-touch devices\n- Smooth scroll behavior\n- Image optimization with next/image\n- Meta tags and Open Graph for sharing\n```",
+        "testStrategy": "Test on actual mobile devices and emulators. Use Chrome DevTools device mode for all breakpoints. Verify touch interactions work correctly. Run Lighthouse audit for mobile performance and accessibility scores.",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          7,
+          8,
+          9,
+          11,
+          14,
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Add Placeholder Images and Demo Content",
+        "description": "Create and add placeholder images, thumbnails, and finalize demo content for investor presentation",
+        "details": "Prepare visual assets and demo content:\n\n```typescript\n// public/images/ structure\n/images\n  /course\n    course-thumbnail.jpg\n  /chapters\n    chapter-1.jpg\n    chapter-2.jpg\n    ...\n  /episodes\n    ep-1-1.jpg\n    ep-1-2.jpg\n    ...\n  /testimonials\n    avatar-1.jpg\n    avatar-2.jpg\n    ...\n  /hero\n    hero-bg.jpg\n    course-preview.jpg\n\n// Use placeholder services for demo\n- https://placehold.co for generic placeholders\n- Create branded placeholders with gold/dark theme\n- Use stock photos from Unsplash for testimonials\n\n// Update mock-data.ts with real placeholder URLs\n- Ensure all videoUrl fields have working sample videos\n- Use sample-videos.com or similar for demo videos\n\n// Demo content polish\n- Realistic episode descriptions\n- Proper duration formatting\n- Testimonial quotes that sound authentic\n```",
+        "testStrategy": "Verify all images load correctly without 404 errors. Check image optimization with next/image. Test placeholder videos play correctly in video player. Visual review of all content for demo readiness.",
+        "priority": "low",
+        "dependencies": [
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-02-03T17:39:32.554Z",
+      "updated": "2026-02-03T17:39:32.554Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

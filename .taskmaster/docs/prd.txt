@@ -1,0 +1,348 @@
+<context>
+# Overview
+
+Abdu Academi is a premium forex trading course platform designed to deliver high-quality educational content to aspiring traders. The platform features a single comprehensive course divided into chapters, with each chapter containing multiple video episodes.
+
+**Problem Solved:** Aspiring forex traders lack a structured, professional learning environment with organized, digestible content from trusted educators.
+
+**Target Users:**
+- Beginner to intermediate forex traders
+- Individuals seeking structured financial education
+- Anyone interested in learning forex trading
+
+**Value Proposition:** A sleek, modern learning platform that provides an exceptional viewing experience with clear course progression, making forex education accessible and engaging.
+
+# Core Features
+
+## 1. Student Course Viewing Interface
+- **What it does:** Allows enrolled students to browse chapters, watch video episodes, and track their progress
+- **Why important:** Core value delivery - students need an intuitive way to consume content
+- **How it works:** Dashboard with course overview, chapter navigation, video player with episode list
+
+## 2. Admin Content Management Dashboard
+- **What it does:** Enables the course creator (admin) to upload, organize, and manage all course content
+- **Why important:** Essential for maintaining and updating course material
+- **How it works:** Protected admin area with forms for adding chapters, uploading videos, and editing content
+
+## 3. Video Playback System
+- **What it does:** High-quality video player optimized for educational content
+- **Why important:** The primary medium of instruction - must be reliable and user-friendly
+- **How it works:** Modern video player with playback controls, quality settings, and progress tracking
+
+## 4. Course Progress Tracking
+- **What it does:** Tracks which episodes a student has completed
+- **Why important:** Helps students resume where they left off and see their advancement
+- **How it works:** Visual progress indicators on chapters and episodes
+
+# User Experience
+
+## User Personas
+
+### Student (Course Buyer)
+- Wants to learn forex trading at their own pace
+- Needs clear navigation between chapters and episodes
+- Values progress tracking and resume capability
+- Expects professional, distraction-free viewing experience
+
+### Admin (Course Creator - Abdu)
+- Needs to upload and organize video content easily
+- Wants to structure course into logical chapters
+- Requires ability to edit titles, descriptions, and order
+- Needs simple interface for content management
+
+## Key User Flows
+
+### Student Flow
+1. Land on course overview page → See all chapters
+2. Select a chapter → View episode list
+3. Click episode → Watch video in dedicated player
+4. Complete episode → Mark as watched, see next episode
+5. Return later → Resume from last position
+
+### Admin Flow
+1. Login to admin dashboard
+2. Create/edit chapters
+3. Upload videos to episodes
+4. Organize content order
+5. Preview how students see content
+
+## UI/UX Considerations
+- Dark theme with gold/amber accents (premium forex aesthetic)
+- Clean, minimal interface focusing on content
+- Mobile-responsive design
+- Smooth transitions and micro-interactions
+- Clear visual hierarchy for course navigation
+</context>
+
+<PRD>
+# Technical Architecture
+
+## System Components
+
+### Frontend (Next.js 16 - Priority Focus)
+- **App Router** with server components where appropriate
+- **Pages Structure:**
+  - `/` - Landing/marketing page
+  - `/course` - Course overview with chapters
+  - `/course/[chapterId]` - Chapter page with episodes
+  - `/course/[chapterId]/[episodeId]` - Video player page
+  - `/admin` - Admin dashboard (protected)
+  - `/admin/chapters` - Chapter management
+  - `/admin/episodes` - Episode management
+
+### Styling
+- Tailwind CSS v4 (already installed)
+- Custom dark theme with gold/amber accent colors
+- Shadcn/ui components for consistency
+- Framer Motion for animations (to be added)
+
+### Backend (Phase 2 - After UI Demo)
+- **Appwrite** for authentication and database
+- **Cloudflare R2** for video storage and delivery
+- API routes in Next.js for backend logic
+
+## Data Models (For UI Mockup - Static Initially)
+
+### Course
+```typescript
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  totalChapters: number;
+  totalEpisodes: number;
+}
+```
+
+### Chapter
+```typescript
+interface Chapter {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  episodes: Episode[];
+  isLocked: boolean;
+}
+```
+
+### Episode
+```typescript
+interface Episode {
+  id: string;
+  chapterId: string;
+  title: string;
+  description: string;
+  duration: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  order: number;
+  isCompleted: boolean;
+}
+```
+
+## Tech Stack
+- **Framework:** Next.js 16 with App Router
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4, shadcn/ui components
+- **Icons:** Phosphor Icons (already installed)
+- **Animations:** Framer Motion
+- **Video Player:** React Player or custom HTML5 player
+- **Backend (Later):** Appwrite, Cloudflare R2
+
+# Development Roadmap
+
+## Phase 1: UI Foundation & Investor Demo (PRIORITY - Current Focus)
+Build visually impressive, functional UI with mock data
+
+### 1.1 Design System & Layout
+- Set up dark theme with gold/amber color palette
+- Create base layout components (header, sidebar, footer)
+- Configure typography and spacing system
+- Add custom fonts for premium feel
+
+### 1.2 Landing Page
+- Hero section with course preview
+- Key benefits/features section
+- Course curriculum preview
+- Testimonials section (placeholder)
+- Call-to-action for enrollment
+
+### 1.3 Student Course Interface
+- Course overview page with chapter cards
+- Chapter detail page with episode list
+- Video player page with episode navigation
+- Progress indicators (visual only initially)
+- Responsive sidebar navigation
+
+### 1.4 Admin Dashboard UI
+- Admin layout with sidebar navigation
+- Dashboard overview with stats cards
+- Chapter management interface (list, add, edit forms)
+- Episode management interface (list, add, edit, upload placeholder)
+- Preview functionality
+
+### 1.5 Mock Data & Polish
+- Create realistic mock course data
+- Add loading states and skeletons
+- Implement smooth transitions
+- Add micro-interactions and hover effects
+- Mobile responsiveness testing
+
+## Phase 2: Authentication & User Management
+- Appwrite setup and configuration
+- User registration and login flows
+- Admin authentication and role protection
+- Session management
+
+## Phase 3: Backend Integration
+- Appwrite database collections setup
+- API routes for CRUD operations
+- Real data replacing mock data
+- User progress persistence
+
+## Phase 4: Video Storage & Delivery
+- Cloudflare R2 bucket setup
+- Video upload functionality for admin
+- Video streaming integration
+- Thumbnail generation
+
+## Phase 5: Production Readiness
+- Performance optimization
+- SEO implementation
+- Analytics integration
+- Payment integration (if needed)
+- Deployment and monitoring
+
+# Logical Dependency Chain
+
+## Foundation First (Must be built first)
+1. **Design system and theme setup** - All components depend on consistent styling
+2. **Base layout components** - Header, footer, navigation structure
+3. **Type definitions** - Data models for TypeScript consistency
+
+## Getting to Visible Frontend Quickly
+4. **Landing page** - First impression for investors, standalone component
+5. **Course overview page** - Shows course structure at a glance
+6. **Chapter page with episodes** - Core navigation pattern
+7. **Video player page** - The main product experience
+
+## Admin Interface (Can parallel with student UI)
+8. **Admin layout and navigation** - Foundation for admin features
+9. **Chapter management UI** - CRUD interface for chapters
+10. **Episode management UI** - CRUD interface with upload placeholder
+
+## Polish and Demo Ready
+11. **Mock data population** - Realistic content for demo
+12. **Animations and transitions** - Premium feel
+13. **Responsive design pass** - Mobile-ready
+14. **Loading states and skeletons** - Professional polish
+
+## Backend Integration (After UI Demo)
+15. **Appwrite setup** - Auth and database
+16. **API routes** - Connect frontend to backend
+17. **Real data migration** - Replace mock with real
+18. **Video storage setup** - R2 integration
+
+# Risks and Mitigations
+
+## Technical Challenges
+- **Video playback performance:** Start with embedded player (YouTube/Vimeo placeholder), implement custom player in Phase 4
+- **Large file uploads:** Defer to Phase 4, use placeholder UI now
+- **Authentication complexity:** Use Appwrite's built-in auth to simplify
+
+## MVP Definition
+The MVP for investor demo is:
+- Stunning landing page
+- Functional course browsing UI
+- Video player page (can use placeholder videos)
+- Admin dashboard UI (forms don't need to save yet)
+- All with mock data but fully interactive navigation
+
+## Resource Constraints
+- Single developer focus: Prioritize visible features over backend
+- Time pressure: Use shadcn/ui components to accelerate development
+- Content: Use placeholder videos/thumbnails until real content available
+
+# Appendix
+
+## Design References
+- Premium dark theme aesthetic (think Bloomberg Terminal meets modern streaming)
+- Color palette: Deep blacks (#0a0a0a), rich grays, gold/amber accents (#d4af37, #f59e0b)
+- Typography: Modern sans-serif, clear hierarchy
+
+## Sample Course Structure for Mock Data
+```
+Abdu Academi Forex Mastery Course
+├── Chapter 1: Forex Fundamentals
+│   ├── Episode 1.1: What is Forex Trading?
+│   ├── Episode 1.2: Currency Pairs Explained
+│   ├── Episode 1.3: Market Structure & Sessions
+│   └── Episode 1.4: Key Terminology
+├── Chapter 2: Technical Analysis Basics
+│   ├── Episode 2.1: Reading Price Charts
+│   ├── Episode 2.2: Support & Resistance
+│   ├── Episode 2.3: Trend Lines & Channels
+│   └── Episode 2.4: Candlestick Patterns
+├── Chapter 3: Trading Strategies
+│   ├── Episode 3.1: Scalping Fundamentals
+│   ├── Episode 3.2: Day Trading Strategies
+│   ├── Episode 3.3: Swing Trading Approach
+│   └── Episode 3.4: Position Trading
+├── Chapter 4: Risk Management
+│   ├── Episode 4.1: Position Sizing
+│   ├── Episode 4.2: Stop Loss Strategies
+│   ├── Episode 4.3: Risk-Reward Ratios
+│   └── Episode 4.4: Psychology of Trading
+└── Chapter 5: Live Trading
+    ├── Episode 5.1: Setting Up Your Platform
+    ├── Episode 5.2: Live Trade Examples
+    ├── Episode 5.3: Trade Analysis & Review
+    └── Episode 5.4: Building Your Trading Plan
+```
+
+## File Structure (Proposed)
+```
+next-app/
+├── app/
+│   ├── (marketing)/
+│   │   └── page.tsx          # Landing page
+│   ├── course/
+│   │   ├── page.tsx          # Course overview
+│   │   ├── [chapterId]/
+│   │   │   ├── page.tsx      # Chapter detail
+│   │   │   └── [episodeId]/
+│   │   │       └── page.tsx  # Video player
+│   ├── admin/
+│   │   ├── layout.tsx        # Admin layout
+│   │   ├── page.tsx          # Admin dashboard
+│   │   ├── chapters/
+│   │   │   └── page.tsx      # Chapter management
+│   │   └── episodes/
+│   │       └── page.tsx      # Episode management
+│   ├── layout.tsx
+│   └── globals.css
+├── components/
+│   ├── ui/                   # shadcn components
+│   ├── course/               # Course-specific components
+│   │   ├── chapter-card.tsx
+│   │   ├── episode-card.tsx
+│   │   ├── video-player.tsx
+│   │   └── progress-bar.tsx
+│   ├── admin/                # Admin-specific components
+│   │   ├── chapter-form.tsx
+│   │   ├── episode-form.tsx
+│   │   └── stats-card.tsx
+│   └── layout/               # Layout components
+│       ├── header.tsx
+│       ├── footer.tsx
+│       └── sidebar.tsx
+├── lib/
+│   ├── utils.ts
+│   ├── mock-data.ts          # Mock course data
+│   └── types.ts              # TypeScript interfaces
+└── public/
+    └── images/               # Placeholder images
+```
+</PRD>

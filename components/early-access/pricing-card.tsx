@@ -113,10 +113,10 @@ export function PricingCard() {
               Early Access Price
             </div>
             <div className="text-5xl md:text-6xl font-display font-bold text-primary mb-2">
-              €199
+              €199.99
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-semibold">
-              <span>Save €200</span>
+              <span>Save €199.01</span>
             </div>
           </div>
 
@@ -131,11 +131,11 @@ export function PricingCard() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Next week:</span>
-              <span className="font-medium">€179.01 remaining</span>
+              <span className="font-medium">€180 remaining</span>
             </div>
             <div className="pt-2 border-t border-border flex justify-between items-center">
               <span className="font-semibold">Total:</span>
-              <span className="text-base font-bold text-primary">€199</span>
+              <span className="text-base font-bold text-primary">€199.99</span>
             </div>
           </div>
         </div>
@@ -144,11 +144,11 @@ export function PricingCard() {
         <div className="space-y-3 mb-6">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" weight="fill" />
-            <span className="text-sm">Pay €19.99 today, €179.01 next week (total €199)</span>
+            <span className="text-sm">Pay €19.99 today, €180 next week (total €199.99)</span>
           </div>
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" weight="fill" />
-            <span className="text-sm">Save €200 vs regular price (€399)</span>
+            <span className="text-sm">Save €199.01 vs regular price (€399)</span>
           </div>
           <div className="flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" weight="fill" />

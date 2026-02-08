@@ -23,6 +23,7 @@ interface User {
   role: string;
   hasAccess: boolean;
   purchaseDate?: string | null;
+  isEarlyAccess?: boolean; // Indicates if user purchased early access
 }
 
 export default function AdminUsersPage() {
@@ -104,6 +105,7 @@ export default function AdminUsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Access</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Purchase Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -122,6 +124,17 @@ export default function AdminUsersPage() {
                       <Badge variant={user.hasAccess ? 'default' : 'outline'}>
                         {user.hasAccess ? 'Yes' : 'No'}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.isEarlyAccess ? (
+                        <Badge variant="default" className="bg-primary">
+                          Early Access
+                        </Badge>
+                      ) : user.hasAccess ? (
+                        <Badge variant="outline">Regular</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.purchaseDate

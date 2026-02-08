@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { RegisterForm } from '@/components/auth/register-form';
 import { getCurrentUser } from '@/lib/appwrite/auth';
 import { Spinner } from '@/components/ui/spinner';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -20,8 +21,9 @@ export default function RegisterPage() {
     try {
       const user = await getCurrentUser();
       if (user) {
-        // User is already logged in, redirect to dashboard
-        router.push('/course/dashboard');
+        // User is already logged in, redirect to specified page or homepage
+        const redirect = searchParams.get('redirect') || '/';
+        router.push(redirect);
         return;
       }
     } catch (error) {
@@ -51,11 +53,23 @@ export default function RegisterPage() {
         <Header />
         <main className="container mx-auto px-6 py-12 lg:py-20">
           <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-            <RegisterForm />
+            <RegisterForm redirectTo={searchParams.get('redirect') || '/'} />
           </div>
         </main>
         <Footer />
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }

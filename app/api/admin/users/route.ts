@@ -11,6 +11,7 @@ interface UserDocument {
   role: string;
   hasAccess?: boolean;
   purchaseDate?: string;
+  isEarlyAccess?: boolean; // Indicates if user purchased early access
   affiliateCode?: string;
   createdAt: string;
   updatedAt: string;
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
         role: userDoc.role,
         hasAccess: userDoc.hasAccess,
         purchaseDate: userDoc.purchaseDate || null,
+        isEarlyAccess: userDoc.isEarlyAccess || false,
         affiliateCode: userDoc.affiliateCode || null,
         createdAt: userDoc.createdAt,
         updatedAt: userDoc.updatedAt,

@@ -23,6 +23,7 @@ export interface User {
   role: 'student' | 'admin';
   hasAccess: boolean;
   purchaseDate?: string;
+  isEarlyAccess?: boolean; // Indicates if user purchased early access
   affiliateCode?: string;
   createdAt: string;
   updatedAt: string;

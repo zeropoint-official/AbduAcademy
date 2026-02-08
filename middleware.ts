@@ -7,6 +7,9 @@ const publicRoutes = ['/', '/login', '/register', '/payment', '/payment/success'
 // Auth routes that should redirect to dashboard if already logged in
 const authRoutes = ['/login', '/register'];
 
+// Admin routes that require admin access
+const adminRoutes = ['/admin'];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -16,10 +19,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if user is authenticated by checking for Appwrite session cookies
-  // Appwrite SDK can set cookies with various naming patterns:
-  // - a_session_<project_id> (legacy)
-  // - a_session_<project_id>_legacy (legacy fallback)
-  // - Custom session cookie we set after login
   const cookies = request.cookies;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
   
@@ -40,15 +39,26 @@ export async function middleware(request: NextRequest) {
     if (authRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL('/course/dashboard', request.url));
     }
-    // Allow access to protected routes
+    
+    // For admin routes, allow access (client-side will check admin status)
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.next();
+    }
+    
+    // Allow access to protected routes (course, account, etc.)
     return NextResponse.next();
   } else {
     // No session cookie found
-    // For protected routes, redirect to login
-    if (!publicRoutes.includes(pathname)) {
+    // For admin routes, redirect to login
+    if (pathname.startsWith('/admin')) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
+    }
+    
+    // For other protected routes, redirect to homepage (early access page)
+    if (!publicRoutes.includes(pathname)) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
   }
 

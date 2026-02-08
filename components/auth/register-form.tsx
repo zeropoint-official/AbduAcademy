@@ -10,7 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  redirectTo?: string;
+}
+
+export function RegisterForm({ redirectTo = '/' }: RegisterFormProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -45,7 +49,7 @@ export function RegisterForm() {
 
     try {
       await register(email, password, name);
-      router.push('/course/dashboard');
+      router.push(redirectTo);
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Registration failed');
@@ -209,7 +213,7 @@ export function RegisterForm() {
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>
           <Link
-            href="/login"
+            href={`/login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
             className="font-medium text-primary hover:underline inline-flex items-center gap-1"
           >
             Sign in

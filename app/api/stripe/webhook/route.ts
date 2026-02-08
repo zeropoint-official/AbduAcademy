@@ -131,13 +131,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userDoc = userDocs.documents[0];
   console.log(`[Webhook] Found user: ${userDoc.$id}, current hasAccess: ${userDoc.hasAccess}`);
   
+  // Check if this is an early access purchase
+  const isEarlyAccess = productId === 'early-access';
+  
   await users.update(userDoc.$id, {
     hasAccess: true,
     purchaseDate: new Date().toISOString(),
+    isEarlyAccess: isEarlyAccess, // Mark as early access user
     updatedAt: new Date().toISOString(),
   });
   
-  console.log(`[Webhook] Successfully granted access to user: ${userDoc.$id}`);
+  console.log(`[Webhook] Successfully granted access to user: ${userDoc.$id}${isEarlyAccess ? ' (Early Access)' : ''}`);
 
   // Process affiliate earnings if affiliate code was used
   if (affiliateCode) {

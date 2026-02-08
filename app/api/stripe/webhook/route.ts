@@ -78,11 +78,15 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log(`[Webhook] checkout.session.completed - Session ID: ${session.id}`);
+  
   const metadata = session.metadata;
   if (!metadata) {
-    console.error('No metadata in checkout session');
+    console.error('[Webhook] No metadata in checkout session');
     return;
   }
+
+  console.log(`[Webhook] Metadata:`, JSON.stringify(metadata, null, 2));
 
   const userId = metadata.userId;
   const productId = metadata.productId;
@@ -91,6 +95,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const finalPrice = parseInt(metadata.finalPrice || '0');
   const discountAmount = parseInt(metadata.discountAmount || '0');
 
+  console.log(`[Webhook] Processing payment - userId: ${userId}, productId: ${productId}, amount: ${finalPrice}`);
+
   // Get payment intent ID
   const paymentIntentId = typeof session.payment_intent === 'string' 
     ? session.payment_intent 
@@ -98,20 +104,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Create payment record
   const paymentId = ID.unique();
-  await payments.create({
-    paymentId,
-    userId,
-    productId,
-    stripeSessionId: session.id,
-    stripePaymentIntentId: paymentIntentId || null,
-    amount: finalPrice,
-    discountAmount,
-    affiliateCode: affiliateCode || null,
-    affiliateUserId: null, // Will be set if affiliate code is valid
-    status: 'completed',
-    createdAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
-  });
+  try {
+    const paymentDoc = await payments.create({
+      paymentId,
+      userId,
+      productId,
+      stripeSessionId: session.id,
+      stripePaymentIntentId: paymentIntentId || null,
+      amount: finalPrice,
+      discountAmount,
+      affiliateCode: affiliateCode || null,
+      affiliateUserId: null, // Will be set if affiliate code is valid
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    });
+    console.log(`[Webhook] Created payment record: ${paymentDoc.$id} with productId: ${productId}`);
+  } catch (error: any) {
+    console.error(`[Webhook] Failed to create payment record:`, error.message);
+    throw error; // Re-throw to ensure webhook fails and Stripe retries
+  }
 
   // Grant user access
   console.log(`[Webhook] Processing payment for userId: ${userId}`);

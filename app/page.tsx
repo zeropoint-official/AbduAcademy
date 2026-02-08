@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PricingCard } from '@/components/early-access/pricing-card';
-import { CheckCircle } from '@phosphor-icons/react';
+import { CheckCircle, Play, Pause } from '@phosphor-icons/react';
 import Link from 'next/link';
 
 function EarlyAccessContent() {
   const searchParams = useSearchParams();
   const [showThankYou, setShowThankYou] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     // Check for success parameter
@@ -19,6 +22,26 @@ function EarlyAccessContent() {
       window.history.replaceState({}, '', '/');
     }
   }, [searchParams]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleVideoClick = () => {
+    togglePlay();
+  };
+
+  const handleVideoEnd = () => {
+    setIsPlaying(false);
+    setShowControls(true);
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -68,6 +91,53 @@ function EarlyAccessContent() {
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
                 Secure your spot now with a €19 deposit. Pay the remaining €180 next week.
               </p>
+            </div>
+
+            {/* Video Section */}
+            <div className="mb-12 md:mb-16">
+              <div className="relative w-full max-w-2xl mx-auto">
+                {/* Video Container with glow effect */}
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border border-border/50 bg-black/50 backdrop-blur-sm">
+                  {/* Decorative glow behind video */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30 rounded-2xl blur-xl opacity-50" />
+                  
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      className="w-full aspect-video object-contain cursor-pointer bg-black"
+                      onClick={handleVideoClick}
+                      onEnded={handleVideoEnd}
+                      onPlay={() => { setIsPlaying(true); setShowControls(false); }}
+                      onPause={() => { setIsPlaying(false); setShowControls(true); }}
+                      playsInline
+                      preload="metadata"
+                    >
+                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/Timeline%203.mov" type="video/quicktime" />
+                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/Timeline%203.mov" type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+
+                    {/* Play/Pause Overlay */}
+                    <div 
+                      className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 cursor-pointer ${
+                        showControls || !isPlaying ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                      }`}
+                      onClick={handleVideoClick}
+                    >
+                      <div className={`transform transition-all duration-300 ${isPlaying ? 'scale-90 opacity-0' : 'scale-100 opacity-100'}`}>
+                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-110 transition-transform">
+                          <Play className="h-8 w-8 md:h-10 md:w-10 text-primary-foreground ml-1" weight="fill" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Caption */}
+                <p className="text-center text-sm text-muted-foreground mt-4">
+                  Watch: What you'll learn in the course
+                </p>
+              </div>
             </div>
 
             {/* Pricing Card */}

@@ -66,7 +66,7 @@ function EarlyAccessContent() {
                 Early Access Offer
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Secure your spot now with a €19.99 deposit. Pay the remaining €180 next week.
+                Secure your spot now with a €19 deposit. Pay the remaining €180 next week.
               </p>
             </div>
 

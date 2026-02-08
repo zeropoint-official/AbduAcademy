@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/config';
 
-const EARLY_ACCESS_PRICE = 1900; // €19 in cents
+const EARLY_ACCESS_PRICE = 1999; // €19.99 in cents
 
 export async function POST(request: NextRequest) {
   try {

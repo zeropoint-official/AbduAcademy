@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 import { LoginForm } from '@/components/auth/login-form';
 import { getCurrentUser } from '@/lib/appwrite/auth';
 import { Spinner } from '@/components/ui/spinner';
@@ -50,13 +48,11 @@ function LoginContent() {
       </div>
 
       <div className="relative z-10">
-        <Header />
         <main className="container mx-auto px-6 py-12 lg:py-20">
-          <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <div className="flex items-center justify-center min-h-screen">
             <LoginForm redirectTo={searchParams.get('redirect') || '/'} />
           </div>
         </main>
-        <Footer />
       </div>
     </div>
   );

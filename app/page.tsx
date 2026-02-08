@@ -112,8 +112,8 @@ function EarlyAccessContent() {
                       playsInline
                       preload="metadata"
                     >
-                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/Timeline%203.mov" type="video/quicktime" />
-                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/Timeline%203.mov" type="video/mp4" />
+                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/lastone.mov" type="video/quicktime" />
+                      <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/lastone.mov" type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
 

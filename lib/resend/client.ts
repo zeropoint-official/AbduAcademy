@@ -6,5 +6,5 @@ if (!process.env.RESEND_API_KEY) {
 
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Default from email - update this to your verified domain in Resend
-export const DEFAULT_FROM_EMAIL = 'Abdu Academy <onboarding@resend.dev>';
+// Default from email - using verified zeropoint.company domain
+export const DEFAULT_FROM_EMAIL = 'Abdu Academy <noreply@zeropoint.company>';

@@ -198,6 +198,7 @@ async function setupCollections() {
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'role', 'string', 50, false);
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'hasAccess', 'boolean', null, true, false, false);
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'purchaseDate', 'datetime', null, false);
+  await createAttributeIfNotExists(COLLECTIONS.USERS, 'isEarlyAccess', 'boolean', null, false, false, false);
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'affiliateCode', 'string', 50, false);
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'createdAt', 'datetime', null, true);
   await createAttributeIfNotExists(COLLECTIONS.USERS, 'updatedAt', 'datetime', null, true);

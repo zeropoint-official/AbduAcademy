@@ -215,7 +215,7 @@ export default function TestPaymentPage() {
         </div>
 
         {/* Webhook Status Button */}
-        <div className="bg-card border border-border rounded-lg p-6 md:col-span-2">
+        <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-start gap-3 mb-4">
             <div className="p-2 bg-primary/10 rounded-lg">
               <Envelope className="h-6 w-6 text-primary" />
@@ -234,6 +234,64 @@ export default function TestPaymentPage() {
             variant="outline"
           >
             {loading ? 'Checking...' : 'Check Status'}
+          </Button>
+        </div>
+
+        {/* Test Email Button */}
+        <div className="bg-card border border-border rounded-lg p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Envelope className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold mb-1">Test Email</h3>
+              <p className="text-sm text-muted-foreground">
+                Send a test confirmation email to verify Resend is working.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={async () => {
+              if (!user) {
+                alert('Please log in first');
+                return;
+              }
+              setLoading(true);
+              setLastResult(null);
+              try {
+                const response = await fetch('/api/admin/test-email', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: user.email }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                  setLastResult({
+                    success: true,
+                    message: data.message || 'Test email sent successfully!',
+                    details: data,
+                  });
+                } else {
+                  setLastResult({
+                    success: false,
+                    message: data.error || 'Failed to send test email',
+                    details: data,
+                  });
+                }
+              } catch (error: any) {
+                setLastResult({
+                  success: false,
+                  message: error.message || 'Failed to send test email',
+                });
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading || !user}
+            className="w-full"
+            variant="outline"
+          >
+            {loading ? 'Sending...' : 'Test Email'}
           </Button>
         </div>
       </div>

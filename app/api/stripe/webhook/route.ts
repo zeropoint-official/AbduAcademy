@@ -231,8 +231,13 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
         purchaseDate,
         isEarlyAccess,
       });
+      console.log(`[Webhook] Confirmation email sent successfully to ${userEmail}`);
     } catch (error: any) {
-      console.error('[Webhook] Failed to send confirmation email (non-critical):', error);
+      console.error('[Webhook] Exception sending confirmation email (non-critical):', {
+        error: error.message,
+        stack: error.stack,
+        userEmail,
+      });
       // Don't throw - email failure should not fail the webhook
     }
   } else {
@@ -278,7 +283,13 @@ async function sendConfirmationEmail({
   });
 
   if (!emailResult.success) {
-    console.error('[Webhook] Email sending failed:', emailResult.error);
+    console.error('[Webhook] Email sending failed:', {
+      error: emailResult.error,
+      customerEmail,
+      productName,
+    });
+  } else {
+    console.log(`[Webhook] Email sent successfully to ${customerEmail}`);
   }
 }
 

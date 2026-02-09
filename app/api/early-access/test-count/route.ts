@@ -9,20 +9,24 @@ interface PaymentDocument {
 
 const TOTAL_SPOTS = 30;
 
+/**
+ * Test counter endpoint - uses 'test-early-access' product ID
+ * This is separate from the real counter and only for testing
+ */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[Count API] Fetching early access count');
+    console.log('[Test Count API] Fetching test early access count');
     
-    // Query for completed early access payments
+    // Query for completed test early access payments
     const result = await payments.list<PaymentDocument>([
       Query.equal('status', 'completed'),
-      Query.equal('productId', 'early-access'),
+      Query.equal('productId', 'test-early-access'),
     ]);
 
     const sold = result.total;
     const remaining = Math.max(0, TOTAL_SPOTS - sold);
 
-    console.log('[Count API] Count retrieved successfully', {
+    console.log('[Test Count API] Test count retrieved successfully', {
       sold,
       remaining,
       total: TOTAL_SPOTS,
@@ -34,13 +38,13 @@ export async function GET(request: NextRequest) {
       total: TOTAL_SPOTS,
     });
   } catch (error: any) {
-    console.error('[Count API] Error getting early access count:', {
+    console.error('[Test Count API] Error getting test early access count:', {
       error: error.message,
       stack: error.stack,
     });
     return NextResponse.json(
       { 
-        error: 'Failed to get spot count',
+        error: 'Failed to get test spot count',
         message: error.message || 'Unknown error',
       },
       { status: 500 }

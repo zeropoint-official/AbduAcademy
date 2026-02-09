@@ -3,6 +3,7 @@ import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe/config';
 import { payments, users, affiliates, affiliateReferrals } from '@/lib/appwrite/database';
 import { ID, Query } from 'appwrite';
 import Stripe from 'stripe';
+import { sendPaymentConfirmationEmail } from '@/lib/resend/send-email';
 
 interface PaymentDocument {
   $id: string;
@@ -23,7 +24,13 @@ export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
+  console.log('[Webhook] Received webhook request');
+
   if (!signature || !STRIPE_WEBHOOK_SECRET) {
+    console.error('[Webhook] Missing signature or webhook secret', {
+      hasSignature: !!signature,
+      hasSecret: !!STRIPE_WEBHOOK_SECRET,
+    });
     return NextResponse.json(
       { error: 'Missing signature or webhook secret' },
       { status: 400 }
@@ -34,8 +41,13 @@ export async function POST(request: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+    console.log(`[Webhook] Event verified: ${event.type} (ID: ${event.id})`);
   } catch (error: any) {
-    console.error('Webhook signature verification failed:', error.message);
+    console.error('[Webhook] Signature verification failed:', {
+      error: error.message,
+      signatureLength: signature?.length,
+      secretLength: STRIPE_WEBHOOK_SECRET?.length,
+    });
     return NextResponse.json(
       { error: `Webhook Error: ${error.message}` },
       { status: 400 }
@@ -47,29 +59,38 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log(`[Webhook] Processing checkout.session.completed for session: ${session.id}`);
         await handleCheckoutCompleted(session);
         break;
       }
 
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`[Webhook] Processing payment_intent.succeeded for payment: ${paymentIntent.id}`);
         await handlePaymentSucceeded(paymentIntent);
         break;
       }
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`[Webhook] Processing payment_intent.payment_failed for payment: ${paymentIntent.id}`);
         await handlePaymentFailed(paymentIntent);
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`[Webhook] Unhandled event type: ${event.type}`);
     }
 
+    console.log(`[Webhook] Successfully processed event: ${event.type}`);
     return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    console.error('[Webhook] Error processing webhook:', {
+      eventType: event.type,
+      eventId: event.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
       { status: 500 }
@@ -77,10 +98,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const metadata = session.metadata;
   if (!metadata) {
-    console.error('No metadata in checkout session');
+    console.error('[Webhook] No metadata in checkout session', { sessionId: session.id });
     return;
   }
 
@@ -91,33 +112,55 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const finalPrice = parseInt(metadata.finalPrice || '0');
   const discountAmount = parseInt(metadata.discountAmount || '0');
 
+  console.log('[Webhook] Processing checkout completion', {
+    sessionId: session.id,
+    userId,
+    productId,
+    finalPrice,
+    affiliateCode: affiliateCode || 'none',
+  });
+
   // Get payment intent ID
   const paymentIntentId = typeof session.payment_intent === 'string' 
     ? session.payment_intent 
     : session.payment_intent?.id;
 
+  // Get customer email from session (preferred) or metadata
+  const customerEmail = session.customer_email || session.customer_details?.email || metadata.userEmail || null;
+  console.log('[Webhook] Customer email:', customerEmail || 'not found');
+
   // Create payment record
   const paymentId = ID.unique();
-  await payments.create({
-    paymentId,
-    userId,
-    productId,
-    stripeSessionId: session.id,
-    stripePaymentIntentId: paymentIntentId || null,
-    amount: finalPrice,
-    discountAmount,
-    affiliateCode: affiliateCode || null,
-    affiliateUserId: null, // Will be set if affiliate code is valid
-    status: 'completed',
-    createdAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
-  });
+  const purchaseDate = new Date().toISOString();
+  
+  try {
+    await payments.create({
+      paymentId,
+      userId,
+      productId,
+      stripeSessionId: session.id,
+      stripePaymentIntentId: paymentIntentId || null,
+      amount: finalPrice,
+      discountAmount,
+      affiliateCode: affiliateCode || null,
+      affiliateUserId: null, // Will be set if affiliate code is valid
+      status: 'completed',
+      createdAt: purchaseDate,
+      completedAt: purchaseDate,
+    });
+    console.log('[Webhook] Payment record created:', paymentId);
+  } catch (error: any) {
+    console.error('[Webhook] Failed to create payment record:', error);
+    throw error; // Fail webhook if payment record creation fails
+  }
 
   // Grant user access
   console.log(`[Webhook] Processing payment for userId: ${userId}`);
   interface UserDocument {
     $id: string;
     userId: string;
+    email?: string;
+    name?: string;
     hasAccess?: boolean;
   }
   const userDocs = await users.list<UserDocument>([Query.equal('userId', userId)]);
@@ -125,32 +168,117 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (userDocs.documents.length === 0) {
     console.error(`[Webhook] User not found with userId: ${userId}. User must be logged in and have a user record in Appwrite.`);
     // Note: If userId is 'guest', user won't be found. User must be logged in to receive access.
+    // Still try to send email if we have customer email from Stripe
+    if (customerEmail) {
+      await sendConfirmationEmail({
+        customerEmail,
+        customerName: session.customer_details?.name || undefined,
+        productId,
+        finalPrice,
+        purchaseDate,
+        isEarlyAccess: productId === 'early-access',
+      });
+    }
     return; // Don't throw - webhook should still return success to Stripe
   }
 
   const userDoc = userDocs.documents[0];
   console.log(`[Webhook] Found user: ${userDoc.$id}, current hasAccess: ${userDoc.hasAccess}`);
   
-  // Check if this is an early access purchase
-  const isEarlyAccess = productId === 'early-access';
+  // Use user email from database if available, otherwise use Stripe customer email
+  const userEmail = userDoc.email || customerEmail;
   
-  await users.update(userDoc.$id, {
-    hasAccess: true,
-    purchaseDate: new Date().toISOString(),
-    isEarlyAccess: isEarlyAccess, // Mark as early access user
-    updatedAt: new Date().toISOString(),
-  });
+  // Check if this is an early access purchase (including test)
+  const isEarlyAccess = productId === 'early-access' || productId === 'test-early-access';
   
-  console.log(`[Webhook] Successfully granted access to user: ${userDoc.$id}${isEarlyAccess ? ' (Early Access)' : ''}`);
+  try {
+    await users.update(userDoc.$id, {
+      hasAccess: true,
+      purchaseDate,
+      isEarlyAccess: isEarlyAccess, // Mark as early access user
+      updatedAt: new Date().toISOString(),
+    });
+    console.log(`[Webhook] Successfully granted access to user: ${userDoc.$id}${isEarlyAccess ? ' (Early Access)' : ''}`);
+  } catch (error: any) {
+    console.error('[Webhook] Failed to update user access:', error);
+    throw error; // Fail webhook if user access update fails
+  }
 
   // Process affiliate earnings if affiliate code was used
   if (affiliateCode) {
-    await processAffiliateEarnings({
-      affiliateCode,
-      paymentId,
-      buyerUserId: userId,
-      discountAmount,
-    });
+    try {
+      await processAffiliateEarnings({
+        affiliateCode,
+        paymentId,
+        buyerUserId: userId,
+        discountAmount,
+      });
+      console.log('[Webhook] Affiliate earnings processed successfully');
+    } catch (error: any) {
+      console.error('[Webhook] Failed to process affiliate earnings:', error);
+      // Don't throw - we don't want to fail the payment if affiliate processing fails
+    }
+  }
+
+  // Send confirmation email (don't fail webhook if email fails)
+  if (userEmail) {
+    try {
+      await sendConfirmationEmail({
+        customerEmail: userEmail,
+        customerName: userDoc.name || session.customer_details?.name || undefined,
+        productId,
+        finalPrice,
+        purchaseDate,
+        isEarlyAccess,
+      });
+    } catch (error: any) {
+      console.error('[Webhook] Failed to send confirmation email (non-critical):', error);
+      // Don't throw - email failure should not fail the webhook
+    }
+  } else {
+    console.warn('[Webhook] No email available to send confirmation');
+  }
+}
+
+/**
+ * Helper function to send confirmation email
+ */
+async function sendConfirmationEmail({
+  customerEmail,
+  customerName,
+  productId,
+  finalPrice,
+  purchaseDate,
+  isEarlyAccess,
+}: {
+  customerEmail: string;
+  customerName?: string;
+  productId: string;
+  finalPrice: number;
+  purchaseDate: string;
+  isEarlyAccess: boolean;
+}) {
+  // Map product IDs to display names
+  const productNames: Record<string, string> = {
+    'early-access': 'Early Access - Abdu Academy',
+    'test-early-access': 'Test Early Access - Abdu Academy (TEST MODE)',
+    // Add more product mappings as needed
+  };
+
+  const productName = productNames[productId] || productId;
+
+  const emailResult = await sendPaymentConfirmationEmail({
+    customerEmail,
+    customerName,
+    productName,
+    amount: finalPrice,
+    currency: 'eur',
+    purchaseDate,
+    isEarlyAccess,
+  });
+
+  if (!emailResult.success) {
+    console.error('[Webhook] Email sending failed:', emailResult.error);
   }
 }
 

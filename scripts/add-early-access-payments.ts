@@ -33,6 +33,7 @@ const EARLY_ACCESS_USER_IDS = [
   '6988cab0000bd607bb78', // Antonina Jarocka
   '6988ca550000a6586a52', // Charich Paet
   '6988c9f0001bb593d607', // Paulos Plakias
+  '6988d934003a8633a6de', // Mustafa Dawod (missed payment - webhook issue)
 ];
 
 const EARLY_ACCESS_PRICE = 1999; // €19.99 in cents
@@ -123,7 +124,6 @@ async function updateUserAccess(userId: string) {
       userDoc.$id,
       {
         hasAccess: true,
-        isEarlyAccess: true,
         purchaseDate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }

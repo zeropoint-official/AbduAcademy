@@ -12,7 +12,8 @@ import {
   SignOut,
   TrendUp,
   BookOpen,
-  Radio
+  Radio,
+  TestTube
 } from '@phosphor-icons/react';
 import { Header } from '@/components/layout/header';
 import type { User } from '@/lib/appwrite/auth';
@@ -62,6 +63,7 @@ export default function AdminLayout({
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/affiliates', label: 'Affiliates', icon: TrendUp },
     { href: '/admin/users', label: 'Users', icon: Users },
+    { href: '/admin/test-payment', label: 'Test Payment', icon: TestTube },
   ];
 
   return (

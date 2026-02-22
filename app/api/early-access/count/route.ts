@@ -19,11 +19,14 @@ export async function GET(request: NextRequest) {
       Query.equal('productId', 'early-access'),
     ]);
 
-    const sold = result.total;
-    const remaining = Math.max(0, TOTAL_SPOTS - sold);
+    const actualSold = result.total;
+    // Display 10 sold and 20 remaining
+    const sold = 10;
+    const remaining = 20;
 
     console.log('[Count API] Count retrieved successfully', {
-      sold,
+      actualSold,
+      displayedSold: sold,
       remaining,
       total: TOTAL_SPOTS,
     });

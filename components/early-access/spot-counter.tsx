@@ -13,7 +13,7 @@ interface SpotCounterProps {
 }
 
 export function SpotCounter({ className }: SpotCounterProps) {
-  const [count, setCount] = useState<SpotCount>({ sold: 0, remaining: 20, total: 20 });
+  const [count, setCount] = useState<SpotCount>({ sold: 10, remaining: 20, total: 30 });
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(false);
   const previousCountRef = useRef(0);

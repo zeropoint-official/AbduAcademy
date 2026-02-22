@@ -7,7 +7,7 @@ interface PaymentDocument {
   status: string;
 }
 
-const TOTAL_SPOTS = 20;
+const TOTAL_SPOTS = 30;
 
 /**
  * Test counter endpoint - uses 'test-early-access' product ID

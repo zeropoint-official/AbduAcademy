@@ -19,7 +19,7 @@ export function PricingCard() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [remaining, setRemaining] = useState(30);
+  const [remaining, setRemaining] = useState(20);
 
   // Load user on mount
   useEffect(() => {
@@ -161,7 +161,7 @@ export function PricingCard() {
           <div className="flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" weight="fill" />
             <span className="text-sm">
-              <span className="font-semibold">Only 30 spots available.</span> After that, price goes up to €399.
+              <span className="font-semibold">Only 20 spots available.</span> After that, price goes up to €399.
             </span>
           </div>
         </div>

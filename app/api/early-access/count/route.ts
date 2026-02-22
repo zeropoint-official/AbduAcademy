@@ -7,7 +7,7 @@ interface PaymentDocument {
   status: string;
 }
 
-const TOTAL_SPOTS = 30;
+const TOTAL_SPOTS = 20;
 
 export async function GET(request: NextRequest) {
   try {

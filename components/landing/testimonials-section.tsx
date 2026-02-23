@@ -26,7 +26,7 @@ const testimonials = [
     role: "Quit 9-5 after 6 months",
     avatar: "D",
     quote:
-      "The community alone is worth it. Abdu is actually active and helps everyone. Never seen anything like this in the trading education space. Best €399 I ever spent.",
+      "The community alone is worth it. Abdu is actually active and helps everyone. Never seen anything like this in the trading education space. Best €400 I ever spent.",
     rating: 5,
   },
   {
@@ -61,7 +61,7 @@ const testimonials2 = [
     role: "Former subscription course victim",
     avatar: "C",
     quote:
-      "I calculated I spent €7,200 on trading subscriptions over 3 years. €399 one-time? No brainer. And the content is actually better because there's no incentive to drip-feed you basic stuff.",
+      "I calculated I spent €7,200 on trading subscriptions over 3 years. €400 one-time? No brainer. And the content is actually better because there's no incentive to drip-feed you basic stuff.",
     rating: 5,
   },
   {
@@ -85,7 +85,7 @@ const testimonials2 = [
     role: "Saved €5,000+ vs subscriptions",
     avatar: "S",
     quote:
-      "Did the math: €399 vs €249/month for a 'premium' course I was considering. After 2 years I would have paid €5,976. Instead, I paid once and got better content. Math doesn't lie.",
+      "Did the math: €400 vs €249/month for a 'premium' course I was considering. After 2 years I would have paid €5,976. Instead, I paid once and got better content. Math doesn't lie.",
     rating: 5,
   },
   {

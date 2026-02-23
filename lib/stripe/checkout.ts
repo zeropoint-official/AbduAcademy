@@ -1,12 +1,13 @@
 import { stripe } from './config';
 import { getOrCreateStripeProduct } from './products';
-import { AFFILIATE_DISCOUNT_AMOUNT, BASE_PRODUCT_PRICE } from './config';
+import { AFFILIATE_DISCOUNT_AMOUNT, BASE_PRODUCT_PRICE, PROMO_CODES } from './config';
 
 export interface CreateCheckoutSessionParams {
   userId: string;
   userEmail: string;
   productId: string;
   affiliateCode?: string;
+  promoCode?: string;
   successUrl: string;
   cancelUrl: string;
 }
@@ -19,26 +20,37 @@ export async function createCheckoutSession({
   userEmail,
   productId,
   affiliateCode,
+  promoCode,
   successUrl,
   cancelUrl,
 }: CreateCheckoutSessionParams) {
   try {
-    // Get or create Stripe product
     const { stripeProductId } = await getOrCreateStripeProduct(productId);
 
-    // Calculate price (apply discount if affiliate code provided)
-    const basePrice = BASE_PRODUCT_PRICE; // €399
-    const finalPrice = affiliateCode ? basePrice - AFFILIATE_DISCOUNT_AMOUNT : basePrice; // €349 or €399
+    const basePrice = BASE_PRODUCT_PRICE;
 
-    // Create a price for this specific checkout (with or without discount)
-    // We create a one-time price for the exact amount
+    // Promo code takes precedence over affiliate discount
+    let finalPrice = basePrice;
+    let discountAmount = 0;
+
+    if (promoCode) {
+      const normalizedPromo = promoCode.trim().toUpperCase();
+      const promoPrice = PROMO_CODES[normalizedPromo];
+      if (promoPrice !== undefined) {
+        finalPrice = promoPrice;
+        discountAmount = basePrice - promoPrice;
+      }
+    } else if (affiliateCode) {
+      finalPrice = basePrice - AFFILIATE_DISCOUNT_AMOUNT;
+      discountAmount = AFFILIATE_DISCOUNT_AMOUNT;
+    }
+
     const price = await stripe.prices.create({
       product: stripeProductId,
       unit_amount: finalPrice,
       currency: 'eur',
     });
 
-    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -55,9 +67,10 @@ export async function createCheckoutSession({
         userId,
         productId,
         affiliateCode: affiliateCode || '',
+        promoCode: promoCode || '',
         originalPrice: basePrice.toString(),
         finalPrice: finalPrice.toString(),
-        discountAmount: affiliateCode ? AFFILIATE_DISCOUNT_AMOUNT.toString() : '0',
+        discountAmount: discountAmount.toString(),
       },
     });
 

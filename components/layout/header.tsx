@@ -62,7 +62,7 @@ export function Header() {
               </Button>
             </Link>
             <div className="w-px h-5 bg-border" />
-            <Link href="/course">
+            <Link href="/payment">
               <Button
                 size="sm"
                 className="h-9 px-5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 glow-gold-sm"
@@ -151,7 +151,7 @@ export function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15, duration: 0.25 }}
               >
-                <Link href="/course">
+                <Link href="/payment">
                   <Button className="mt-2 w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90">
                     Get Started
                   </Button>

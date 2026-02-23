@@ -1,11 +1,11 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Play } from "@phosphor-icons/react";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { WordRotate } from "@/components/ui/word-rotate";
-import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
 import { BlurFade } from "@/components/ui/blur-fade";
 
 const painRotation = [
@@ -22,6 +22,21 @@ const stats = [
 ];
 
 export function HeroSection() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
     <section className="relative min-h-[90vh] overflow-hidden">
 
@@ -269,14 +284,38 @@ export function HeroSection() {
           {/* Right Column - Video */}
           <BlurFade delay={0.5} inView direction="left">
             <div className="relative lg:pt-16">
-              <HeroVideoDialog
-                videoSrc="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                thumbnailSrc="/hf_20260207_102534_52b1297a-ac7a-47e8-8b5b-6a034ad8b1ac.png"
-                thumbnailAlt="Trading course preview"
-                animationStyle="from-center"
-                className="rounded-lg overflow-hidden shadow-2xl"
-              />
-              {/* Decorative elements */}
+              <div className="relative rounded-lg overflow-hidden shadow-2xl border border-border/50 bg-black/50 backdrop-blur-sm">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30 rounded-lg blur-xl opacity-50" />
+                <div className="relative">
+                  <video
+                    ref={videoRef}
+                    className="w-full aspect-video object-contain cursor-pointer bg-black"
+                    onClick={togglePlay}
+                    onEnded={() => { setIsPlaying(false); setShowControls(true); }}
+                    onPlay={() => { setIsPlaying(true); setShowControls(false); }}
+                    onPause={() => { setIsPlaying(false); setShowControls(true); }}
+                    playsInline
+                    preload="metadata"
+                    poster="/hf_20260207_102534_52b1297a-ac7a-47e8-8b5b-6a034ad8b1ac.png"
+                  >
+                    <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/AbduVid.mov" type="video/quicktime" />
+                    <source src="https://pub-c16cfda790dc4841b59ca23daaa41898.r2.dev/videos/AbduVid.mov" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 cursor-pointer ${
+                      showControls || !isPlaying ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                    }`}
+                    onClick={togglePlay}
+                  >
+                    <div className={`transform transition-all duration-300 ${isPlaying ? 'scale-90 opacity-0' : 'scale-100 opacity-100'}`}>
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-110 transition-transform">
+                        <Play className="h-7 w-7 md:h-8 md:w-8 text-primary-foreground ml-0.5" weight="fill" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/10 rounded-lg -z-10" />
               <div className="absolute -top-4 -left-4 w-16 h-16 border-2 border-primary/30 rounded-lg -z-10" />
             </div>
@@ -294,7 +333,7 @@ export function HeroSection() {
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-foreground">
-                      €399
+                      €400
                     </span>
                     <span className="text-primary font-medium">once</span>
                   </div>
@@ -311,7 +350,7 @@ export function HeroSection() {
           {/* CTAs */}
           <BlurFade delay={0.8} inView>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-              <Link href="/course">
+              <Link href="/payment">
                 <ShimmerButton
                   shimmerColor="#3b82f6"
                   shimmerSize="0.1em"

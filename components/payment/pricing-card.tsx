@@ -6,12 +6,28 @@ import { BASE_PRODUCT_PRICE, AFFILIATE_DISCOUNT_AMOUNT } from '@/lib/stripe/conf
 
 interface PricingCardProps {
   affiliateCode?: string;
+  promoFinalPrice?: number | null;
 }
 
-export function PricingCard({ affiliateCode }: PricingCardProps) {
-  const basePrice = BASE_PRODUCT_PRICE / 100; // Convert cents to euros
-  const discountAmount = AFFILIATE_DISCOUNT_AMOUNT / 100;
-  const finalPrice = affiliateCode ? basePrice - discountAmount : basePrice;
+export function PricingCard({ affiliateCode, promoFinalPrice }: PricingCardProps) {
+  const basePrice = BASE_PRODUCT_PRICE / 100;
+  const affiliateDiscount = AFFILIATE_DISCOUNT_AMOUNT / 100;
+
+  let displayPrice = basePrice;
+  let savedAmount = 0;
+  let discountLabel = '';
+
+  if (promoFinalPrice != null) {
+    displayPrice = promoFinalPrice / 100;
+    savedAmount = basePrice - displayPrice;
+    discountLabel = 'promo code';
+  } else if (affiliateCode) {
+    displayPrice = basePrice - affiliateDiscount;
+    savedAmount = affiliateDiscount;
+    discountLabel = 'affiliate code';
+  }
+
+  const hasDiscount = savedAmount > 0;
 
   return (
     <Card className="border-primary/20">
@@ -20,16 +36,16 @@ export function PricingCard({ affiliateCode }: PricingCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          {affiliateCode ? (
+          {hasDiscount ? (
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold">€{finalPrice.toFixed(2)}</span>
+                <span className="text-4xl font-bold">€{displayPrice.toFixed(2)}</span>
                 <span className="text-xl text-muted-foreground line-through">
                   €{basePrice.toFixed(2)}
                 </span>
               </div>
               <p className="text-sm text-primary font-medium">
-                You saved €{discountAmount.toFixed(2)} with affiliate code!
+                You save €{savedAmount.toFixed(2)} with {discountLabel}!
               </p>
             </div>
           ) : (
@@ -41,7 +57,7 @@ export function PricingCard({ affiliateCode }: PricingCardProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-semibold">What's included:</h3>
+          <h3 className="font-semibold">What&apos;s included:</h3>
           <ul className="space-y-2">
             {[
               'Lifetime access to all course content',

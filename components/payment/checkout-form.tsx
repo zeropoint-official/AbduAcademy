@@ -10,42 +10,46 @@ import type { User } from '@/lib/appwrite/auth';
 
 interface CheckoutFormProps {
   affiliateCode?: string;
-  user: User | null;
+  user: User;
+  onPromoApplied?: (promoCode: string | null, finalPrice: number | null) => void;
 }
 
-export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: CheckoutFormProps) {
+export function CheckoutForm({ affiliateCode: initialAffiliateCode, user, onPromoApplied }: CheckoutFormProps) {
   const router = useRouter();
   const [affiliateCode, setAffiliateCode] = useState(initialAffiliateCode || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [promoCode, setPromoCode] = useState('');
+  const [email, setEmail] = useState(user.email);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [validatingCode, setValidatingCode] = useState(false);
-  const [codeValidation, setCodeValidation] = useState<{
+
+  const [validatingAffiliate, setValidatingAffiliate] = useState(false);
+  const [affiliateValidation, setAffiliateValidation] = useState<{
     isValid: boolean;
     message: string;
   } | null>(null);
 
-  // Validate affiliate code format
-  const validateCodeFormat = (code: string): boolean => {
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [promoValidation, setPromoValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    finalPrice?: number;
+  } | null>(null);
+
+  const validateAffiliateFormat = (code: string): boolean => {
     const pattern = /^ABDU-[A-Z0-9]{6}$/;
     return pattern.test(code);
   };
 
-  // Validate affiliate code when user types
   const handleAffiliateCodeChange = async (value: string) => {
     const upperValue = value.toUpperCase();
     setAffiliateCode(upperValue);
-    setCodeValidation(null);
+    setAffiliateValidation(null);
 
-    // Only validate if code is not empty and has correct length
-    if (upperValue.trim() === '') {
-      return;
-    }
+    if (upperValue.trim() === '') return;
 
-    // First check format
-    if (!validateCodeFormat(upperValue)) {
+    if (!validateAffiliateFormat(upperValue)) {
       if (upperValue.length >= 5) {
-        setCodeValidation({
+        setAffiliateValidation({
           isValid: false,
           message: 'Invalid format. Code must be ABDU-XXXXXX (6 characters after ABDU-)',
         });
@@ -53,8 +57,7 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
       return;
     }
 
-    // If format is valid, check if code exists
-    setValidatingCode(true);
+    setValidatingAffiliate(true);
     try {
       const response = await fetch('/api/affiliates/validate', {
         method: 'POST',
@@ -65,23 +68,66 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
       const data = await response.json();
 
       if (response.ok && data.valid) {
-        setCodeValidation({
+        setAffiliateValidation({
           isValid: true,
           message: 'Valid affiliate code! You\'ll save €50.',
         });
       } else {
-        setCodeValidation({
+        setAffiliateValidation({
           isValid: false,
           message: data.error || 'Affiliate code not found or inactive',
         });
       }
-    } catch (error) {
-      setCodeValidation({
+    } catch {
+      setAffiliateValidation({
         isValid: false,
         message: 'Error validating code. Please try again.',
       });
     } finally {
-      setValidatingCode(false);
+      setValidatingAffiliate(false);
+    }
+  };
+
+  const handlePromoCodeChange = async (value: string) => {
+    const upperValue = value.toUpperCase();
+    setPromoCode(upperValue);
+    setPromoValidation(null);
+    onPromoApplied?.(null, null);
+
+    if (upperValue.trim() === '') return;
+
+    setValidatingPromo(true);
+    try {
+      const response = await fetch('/api/stripe/validate-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: upperValue }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        const savedAmount = (data.originalPrice - data.finalPrice) / 100;
+        const promoFinalPrice = data.finalPrice / 100;
+        setPromoValidation({
+          isValid: true,
+          message: `Promo applied! You pay €${promoFinalPrice} (save €${savedAmount})`,
+          finalPrice: data.finalPrice,
+        });
+        onPromoApplied?.(upperValue, data.finalPrice);
+      } else {
+        setPromoValidation({
+          isValid: false,
+          message: data.error || 'Invalid promo code',
+        });
+      }
+    } catch {
+      setPromoValidation({
+        isValid: false,
+        message: 'Error validating promo code. Please try again.',
+      });
+    } finally {
+      setValidatingPromo(false);
     }
   };
 
@@ -90,30 +136,48 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
     setError('');
     setLoading(true);
 
-    // Validate affiliate code if provided
-    if (affiliateCode.trim()) {
-      if (!validateCodeFormat(affiliateCode)) {
+    // Validate promo code if provided
+    if (promoCode.trim()) {
+      try {
+        const promoResponse = await fetch('/api/stripe/validate-promo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: promoCode }),
+        });
+        const promoData = await promoResponse.json();
+        if (!promoResponse.ok || !promoData.valid) {
+          setError(promoData.error || 'Invalid promo code');
+          setLoading(false);
+          return;
+        }
+      } catch {
+        setError('Error validating promo code. Please try again.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Validate affiliate code if provided and no promo
+    if (!promoCode.trim() && affiliateCode.trim()) {
+      if (!validateAffiliateFormat(affiliateCode)) {
         setError('Invalid affiliate code format. Code must be ABDU-XXXXXX');
         setLoading(false);
         return;
       }
 
-      // Re-validate code before submitting
       try {
         const validateResponse = await fetch('/api/affiliates/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: affiliateCode }),
         });
-
         const validateData = await validateResponse.json();
-
         if (!validateResponse.ok || !validateData.valid) {
           setError(validateData.error || 'Invalid affiliate code');
           setLoading(false);
           return;
         }
-      } catch (validateError) {
+      } catch {
         setError('Error validating affiliate code. Please try again.');
         setLoading(false);
         return;
@@ -121,14 +185,14 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
     }
 
     try {
-      // Create checkout session
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.userId || 'guest',
+          userId: user.userId,
           userEmail: email,
           productId: 'forex-course-full-access',
+          promoCode: promoCode.trim() || undefined,
           affiliateCode: affiliateCode.trim() || undefined,
           successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/payment/cancel`,
@@ -141,7 +205,6 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -175,52 +238,83 @@ export function CheckoutForm({ affiliateCode: initialAffiliateCode, user }: Chec
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading || !!user}
+              disabled
               placeholder="your@email.com"
             />
-            {user && (
-              <p className="text-xs text-muted-foreground">
-                Using your account email: {user.email}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Using your account email: {user.email}
+            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="affiliateCode">Affiliate Code (Optional)</Label>
+            <Label htmlFor="promoCode">Promo Code (Optional)</Label>
             <Input
-              id="affiliateCode"
+              id="promoCode"
               type="text"
-              value={affiliateCode}
-              onChange={(e) => handleAffiliateCodeChange(e.target.value)}
+              value={promoCode}
+              onChange={(e) => handlePromoCodeChange(e.target.value)}
               disabled={loading}
-              placeholder="ABDU-XXXXXX"
-              maxLength={13}
+              placeholder="Enter promo code"
               className={
-                codeValidation
-                  ? codeValidation.isValid
+                promoValidation
+                  ? promoValidation.isValid
                     ? 'border-success'
                     : 'border-destructive'
                   : ''
               }
             />
-            {validatingCode && (
-              <p className="text-xs text-muted-foreground">Validating code...</p>
+            {validatingPromo && (
+              <p className="text-xs text-muted-foreground">Validating promo code...</p>
             )}
-            {codeValidation && !validatingCode && (
+            {promoValidation && !validatingPromo && (
               <p
                 className={`text-xs ${
-                  codeValidation.isValid ? 'text-success' : 'text-destructive'
+                  promoValidation.isValid ? 'text-success' : 'text-destructive'
                 }`}
               >
-                {codeValidation.message}
-              </p>
-            )}
-            {!codeValidation && !validatingCode && affiliateCode && (
-              <p className="text-xs text-muted-foreground">
-                Enter a valid affiliate code to save €50
+                {promoValidation.message}
               </p>
             )}
           </div>
+
+          {!promoValidation?.isValid && (
+            <div className="space-y-2">
+              <Label htmlFor="affiliateCode">Affiliate Code (Optional)</Label>
+              <Input
+                id="affiliateCode"
+                type="text"
+                value={affiliateCode}
+                onChange={(e) => handleAffiliateCodeChange(e.target.value)}
+                disabled={loading}
+                placeholder="ABDU-XXXXXX"
+                maxLength={13}
+                className={
+                  affiliateValidation
+                    ? affiliateValidation.isValid
+                      ? 'border-success'
+                      : 'border-destructive'
+                    : ''
+                }
+              />
+              {validatingAffiliate && (
+                <p className="text-xs text-muted-foreground">Validating code...</p>
+              )}
+              {affiliateValidation && !validatingAffiliate && (
+                <p
+                  className={`text-xs ${
+                    affiliateValidation.isValid ? 'text-success' : 'text-destructive'
+                  }`}
+                >
+                  {affiliateValidation.message}
+                </p>
+              )}
+              {!affiliateValidation && !validatingAffiliate && affiliateCode && (
+                <p className="text-xs text-muted-foreground">
+                  Enter a valid affiliate code to save €50
+                </p>
+              )}
+            </div>
+          )}
 
           <Button type="submit" className="w-full" size="lg" disabled={loading || !email}>
             {loading ? 'Processing...' : 'Proceed to Checkout'}

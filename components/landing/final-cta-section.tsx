@@ -55,7 +55,7 @@ export function FinalCtaSection() {
                   </div>
                   <div className="text-2xl text-muted-foreground">→</div>
                   <div className="text-center">
-                    <p className="text-4xl font-bold text-primary">€399</p>
+                    <p className="text-4xl font-bold text-primary">€400</p>
                     <p className="text-sm text-muted-foreground">once</p>
                   </div>
                 </div>
@@ -67,7 +67,7 @@ export function FinalCtaSection() {
                 </p>
 
                 {/* CTA button */}
-                <Link href="/course" className="block">
+                <Link href="/payment" className="block">
                   <ShimmerButton
                     shimmerColor="#3b82f6"
                     shimmerSize="0.1em"

@@ -8,13 +8,13 @@ const comparisonData = [
   {
     feature: "Pricing",
     subscription: "€199-€499/month forever",
-    abdu: "€399 once",
+    abdu: "€400 once",
     subscriptionBad: true,
   },
   {
     feature: "Total cost (Year 1)",
     subscription: "€2,388 - €5,988",
-    abdu: "€399 (done)",
+    abdu: "€400 (done)",
     subscriptionBad: true,
   },
   {
@@ -152,7 +152,7 @@ export function ComparisonSection() {
                   </span>
                 </p>
                 <p className="text-muted-foreground">
-                  One payment of €399. Lifetime access. No hidden fees.
+                  One payment of €400. Lifetime access. No hidden fees.
                 </p>
               </div>
             </div>

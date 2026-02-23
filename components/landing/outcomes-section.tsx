@@ -170,7 +170,7 @@ export function OutcomesSection() {
               Ready to Master These Skills?
             </h3>
             <Link
-              href="/course"
+              href="/payment"
               className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors glow-gold-sm"
             >
               Get Lifetime Access – One Payment

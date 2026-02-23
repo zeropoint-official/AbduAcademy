@@ -265,9 +265,9 @@ async function sendConfirmationEmail({
 }) {
   // Map product IDs to display names
   const productNames: Record<string, string> = {
+    'forex-course-full-access': 'Abdu Academy - Forex Mastery Course',
     'early-access': 'Early Access - Abdu Academy',
     'test-early-access': 'Test Early Access - Abdu Academy (TEST MODE)',
-    // Add more product mappings as needed
   };
 
   const productName = productNames[productId] || productId;

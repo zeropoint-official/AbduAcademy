@@ -241,7 +241,7 @@ export default function CourseDashboard() {
                       Purchase the course to unlock all chapters and start your trading journey.
                     </p>
                     <Link href="/payment" className="inline-flex items-center justify-center whitespace-nowrap rounded-4xl border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-9 gap-1.5 px-3 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50">
-                      Get Access for €399
+                      Get Access for €400
                     </Link>
                   </div>
                 </div>

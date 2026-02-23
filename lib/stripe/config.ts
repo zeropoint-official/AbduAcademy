@@ -13,8 +13,13 @@ export const CURRENCY = 'eur'; // Euro
 // Affiliate discount amount in cents (€50)
 export const AFFILIATE_DISCOUNT_AMOUNT = 5000;
 
-// Base product price in cents (€399)
-export const BASE_PRODUCT_PRICE = 39900;
+// Base product price in cents (€400)
+export const BASE_PRODUCT_PRICE = 40000;
+
+// Promo codes: code → final price in cents
+export const PROMO_CODES: Record<string, number> = {
+  'XAKBD20EA': 18000, // €180
+};
 
 // Server-side only code - only execute on server
 let stripeInstance: Stripe | null = null;

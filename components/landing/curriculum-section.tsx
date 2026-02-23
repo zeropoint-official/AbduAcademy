@@ -301,7 +301,7 @@ export function CurriculumSection() {
                         </span>
                         <div className="text-right">
                           <span className="text-4xl font-bold text-primary">
-                            €399
+                            €400
                           </span>
                           <span className="text-sm text-muted-foreground block">
                             one time
@@ -321,7 +321,7 @@ export function CurriculumSection() {
 
                       {/* CTA */}
                       <Link
-                        href="/course"
+                        href="/payment"
                         className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors glow-gold"
                       >
                         Get Lifetime Access Now

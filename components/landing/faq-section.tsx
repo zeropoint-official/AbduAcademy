@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CaretDown, Question } from "@phosphor-icons/react";
 import { BlurFade } from "@/components/ui/blur-fade";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 const faqs = [
   {

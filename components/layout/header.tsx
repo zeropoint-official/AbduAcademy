@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { List, X, GearSix } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 

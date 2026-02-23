@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   CaretLeft,
   CaretRight,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
+  getAllChapters,
   getChapterById,
   getEpisodeById,
   getNextEpisode,
@@ -46,12 +47,16 @@ export default function EpisodePage({ params }: EpisodePageProps) {
   useEffect(() => {
     async function loadEpisode() {
       try {
-        const [chapterData, episodeData, nextData, prevData, currentUser] = await Promise.all([
-          getChapterById(chapterId),
+        const [allChapters, episodeData, currentUser] = await Promise.all([
+          getAllChapters(),
           getEpisodeById(chapterId, episodeId),
-          getNextEpisode(episodeId),
-          getPreviousEpisode(episodeId),
           getCurrentUser(),
+        ]);
+
+        const chapterData = allChapters.find((ch) => ch.id === chapterId) ?? null;
+        const [nextData, prevData] = await Promise.all([
+          getNextEpisode(episodeId, allChapters),
+          getPreviousEpisode(episodeId, allChapters),
         ]);
 
         if (!chapterData || !episodeData) {

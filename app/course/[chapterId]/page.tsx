@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { CaretLeft, Play, Lock, Clock } from "@phosphor-icons/react";
 import { EpisodeCard } from "@/components/course/episode-card";
 import { Progress } from "@/components/ui/progress";

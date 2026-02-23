@@ -26,8 +26,7 @@ export function LiveIndicator() {
 
   useEffect(() => {
     loadLiveStatus();
-    // Refresh every 30 seconds
-    const interval = setInterval(loadLiveStatus, 30000);
+    const interval = setInterval(loadLiveStatus, 60000);
     return () => clearInterval(interval);
   }, []);
 

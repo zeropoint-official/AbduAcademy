@@ -31,51 +31,45 @@ export async function GET(request: NextRequest) {
       return authResult;
     }
 
-    // Get all affiliates
-    const { documents } = await affiliates.list<AffiliateDocument>([
-      Query.orderDesc('createdAt'),
+    // Batch-fetch affiliates, users, and referrals in parallel (3 queries instead of 1+2N)
+    const [{ documents }, allUsers, allReferrals] = await Promise.all([
+      affiliates.list<AffiliateDocument>([Query.orderDesc('createdAt')]),
+      users.list<UserDocument>([Query.limit(5000)]),
+      affiliateReferrals.list<{ affiliateId: string }>([Query.limit(5000)]),
     ]);
 
-    // Enrich with user information and stats
-    const enrichedAffiliates = await Promise.all(
-      documents.map(async (affiliate) => {
-        let userEmail = 'N/A';
-        let userName = 'N/A';
+    // Build lookup maps
+    const userMap = new Map<string, UserDocument>();
+    for (const u of allUsers.documents) {
+      userMap.set(u.userId, u);
+    }
 
-        try {
-          const userDocs = await users.list<UserDocument>([
-            Query.equal('userId', affiliate.userId),
-          ]);
-          if (userDocs.documents.length > 0) {
-            userEmail = userDocs.documents[0].email;
-            userName = userDocs.documents[0].name || userEmail;
-          }
-        } catch (error) {
-          console.error('Error enriching affiliate data:', error);
-        }
+    const referralCounts = new Map<string, number>();
+    for (const r of allReferrals.documents) {
+      referralCounts.set(r.affiliateId, (referralCounts.get(r.affiliateId) || 0) + 1);
+    }
 
-        // Get referral count
-        const referrals = await affiliateReferrals.list([
-          Query.equal('affiliateId', affiliate.$id),
-        ]);
+    const enrichedAffiliates = documents.map((affiliate) => {
+      const user = userMap.get(affiliate.userId);
+      const userEmail = user?.email ?? 'N/A';
+      const userName = user?.name || userEmail;
 
-        return {
-          affiliateId: affiliate.affiliateId,
-          code: affiliate.code,
-          userId: affiliate.userId,
-          userEmail,
-          userName,
-          totalEarnings: affiliate.totalEarnings || 0,
-          totalReferrals: affiliate.totalReferrals || 0,
-          pendingEarnings: affiliate.pendingEarnings || 0,
-          paidEarnings: affiliate.paidEarnings || 0,
-          isActive: affiliate.isActive,
-          createdAt: affiliate.createdAt,
-          updatedAt: affiliate.updatedAt,
-          referralCount: referrals.total,
-        };
-      })
-    );
+      return {
+        affiliateId: affiliate.affiliateId,
+        code: affiliate.code,
+        userId: affiliate.userId,
+        userEmail,
+        userName,
+        totalEarnings: affiliate.totalEarnings || 0,
+        totalReferrals: affiliate.totalReferrals || 0,
+        pendingEarnings: affiliate.pendingEarnings || 0,
+        paidEarnings: affiliate.paidEarnings || 0,
+        isActive: affiliate.isActive,
+        createdAt: affiliate.createdAt,
+        updatedAt: affiliate.updatedAt,
+        referralCount: referralCounts.get(affiliate.$id) || 0,
+      };
+    });
 
     return NextResponse.json({ affiliates: enrichedAffiliates });
   } catch (error: any) {

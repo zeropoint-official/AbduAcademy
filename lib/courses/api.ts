@@ -74,20 +74,24 @@ export async function getEpisodeById(
 }
 
 /**
- * Get all episodes across all chapters
+ * Get all episodes across all chapters.
+ * Accepts optional pre-fetched chapters to avoid a redundant API call.
  */
-export async function getAllEpisodes(): Promise<Episode[]> {
-  const chapters = await getAllChapters();
+export async function getAllEpisodes(chaptersData?: Chapter[]): Promise<Episode[]> {
+  const chapters = chaptersData ?? await getAllChapters();
   return chapters.flatMap((chapter) => chapter.episodes);
 }
 
 /**
- * Get the next episode after the current one
+ * Get the next episode after the current one.
+ * Accepts optional pre-fetched chapters to avoid redundant API calls.
  */
 export async function getNextEpisode(
-  currentEpisodeId: string
+  currentEpisodeId: string,
+  chaptersData?: Chapter[]
 ): Promise<{ episode: Episode; chapter: Chapter } | null> {
-  const allEpisodes = await getAllEpisodes();
+  const chapters = chaptersData ?? await getAllChapters();
+  const allEpisodes = chapters.flatMap((ch) => ch.episodes);
   const currentIndex = allEpisodes.findIndex((ep) => ep.id === currentEpisodeId);
 
   if (currentIndex === -1 || currentIndex === allEpisodes.length - 1) {
@@ -95,7 +99,6 @@ export async function getNextEpisode(
   }
 
   const nextEpisode = allEpisodes[currentIndex + 1];
-  const chapters = await getAllChapters();
   const chapter = chapters.find((ch) => 
     ch.episodes.some(ep => ep.id === nextEpisode.id)
   );
@@ -106,12 +109,15 @@ export async function getNextEpisode(
 }
 
 /**
- * Get the previous episode before the current one
+ * Get the previous episode before the current one.
+ * Accepts optional pre-fetched chapters to avoid redundant API calls.
  */
 export async function getPreviousEpisode(
-  currentEpisodeId: string
+  currentEpisodeId: string,
+  chaptersData?: Chapter[]
 ): Promise<{ episode: Episode; chapter: Chapter } | null> {
-  const allEpisodes = await getAllEpisodes();
+  const chapters = chaptersData ?? await getAllChapters();
+  const allEpisodes = chapters.flatMap((ch) => ch.episodes);
   const currentIndex = allEpisodes.findIndex((ep) => ep.id === currentEpisodeId);
 
   if (currentIndex <= 0) {
@@ -119,7 +125,6 @@ export async function getPreviousEpisode(
   }
 
   const prevEpisode = allEpisodes[currentIndex - 1];
-  const chapters = await getAllChapters();
   const chapter = chapters.find((ch) => 
     ch.episodes.some(ep => ep.id === prevEpisode.id)
   );
@@ -147,14 +152,15 @@ export function getChapterProgress(chapterId: string, episodes: Episode[]): {
 }
 
 /**
- * Get total course progress
+ * Get total course progress.
+ * Accepts optional pre-fetched chapters to avoid a redundant API call.
  */
-export async function getCourseProgress(): Promise<{
+export async function getCourseProgress(chaptersData?: Chapter[]): Promise<{
   completed: number;
   total: number;
   percentage: number;
 }> {
-  const allEpisodes = await getAllEpisodes();
+  const allEpisodes = await getAllEpisodes(chaptersData);
   const total = allEpisodes.length;
   // TODO: Integrate with user progress tracking
   const completed = 0;

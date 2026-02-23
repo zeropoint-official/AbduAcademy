@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { BookOpen, Clock, Play, TrendUp, Lock, CurrencyDollar, ChatCircle, PaperPlaneTilt } from '@phosphor-icons/react';
 import { ChapterCard } from '@/components/course/chapter-card';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getCurrentUser } from '@/lib/appwrite/auth';
-import { getAllChapters, getCourseProgress, getCourseDuration, getAllEpisodes } from '@/lib/courses/api';
+import { getAllChapters, getCourseDuration } from '@/lib/courses/api';
 import type { Chapter } from '@/lib/courses/api';
 import { staggerContainer, staggerItem, heroContainer, heroElement, heroTitle } from '@/lib/animations';
 import type { User } from '@/lib/appwrite/auth';
@@ -51,8 +51,7 @@ export default function CourseDashboard() {
     }
     init();
     
-    // Refresh live session every 30 seconds
-    const interval = setInterval(loadLiveSession, 30000);
+    const interval = setInterval(loadLiveSession, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,13 +62,10 @@ export default function CourseDashboard() {
 
   async function loadCourseData() {
     try {
-      const [chaptersData, progress, allEpisodes] = await Promise.all([
-        getAllChapters(),
-        getCourseProgress(),
-        getAllEpisodes(),
-      ]);
+      const chaptersData = await getAllChapters();
+      const allEpisodes = chaptersData.flatMap((ch) => ch.episodes);
       setChapters(chaptersData);
-      setCourseProgress(progress);
+      setCourseProgress({ completed: 0, total: allEpisodes.length, percentage: 0 });
       setCourseDuration(getCourseDuration(allEpisodes));
       setLoading(false);
     } catch (error) {

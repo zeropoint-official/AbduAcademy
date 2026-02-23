@@ -15,17 +15,22 @@ export const client = new Client()
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID);
 
 // Server-side Appwrite client (with API key) - using node-appwrite
+// Cached at module scope so the same instance is reused within a serverless invocation
+let _serverClient: ServerClient | null = null;
+
 export function getServerClient() {
+  if (_serverClient) return _serverClient;
+
   if (!process.env.APPWRITE_API_KEY) {
     throw new Error('APPWRITE_API_KEY is not set');
   }
 
-  const serverClient = new ServerClient()
+  _serverClient = new ServerClient()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
     .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
     .setKey(process.env.APPWRITE_API_KEY);
 
-  return serverClient;
+  return _serverClient;
 }
 
 // Client-side services

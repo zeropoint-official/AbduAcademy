@@ -83,17 +83,9 @@ export function EpisodeForm({ chapterId, chapterIsLocked = false, episode, onClo
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
-    // For files under 10MB, use the old method (simpler, no CORS issues)
-    // For larger files, use presigned URLs
-    const usePresignedUrl = file.size > 10 * 1024 * 1024; // 10MB threshold
 
-    if (!usePresignedUrl) {
-      // Use the old upload method for smaller files
-      return uploadFileViaAPI(file, fileType);
-    }
-
-    // Step 1: Generate file key
+    // Always use presigned URLs to bypass Next.js API route body size limits
+    // Generate file key
     const timestamp = Date.now();
     const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     let key: string;
@@ -135,122 +127,64 @@ export function EpisodeForm({ chapterId, chapterIsLocked = false, episode, onClo
       console.log('Presigned URL received:', { presignedUrl: presignedUrl.substring(0, 100) + '...', publicUrl });
 
       // Step 3: Upload directly to R2 using presigned URL (bypasses Next.js entirely)
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = (e.loaded / e.total) * 100;
-            setUploadProgress(percentComplete);
-          }
-        });
+      const attemptUpload = (): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
 
-        xhr.addEventListener('load', () => {
-          console.log('Upload response:', { status: xhr.status, statusText: xhr.statusText });
-          if (xhr.status === 200 || xhr.status === 204) {
-            // Success - return the public URL
-            resolve(publicUrl);
-          } else {
-            try {
-              const errorResponse = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-              const errorMsg = errorResponse.error || errorResponse.message || `Upload failed with status ${xhr.status}`;
-              console.error('Upload failed:', { status: xhr.status, response: xhr.responseText });
-              reject(new Error(errorMsg));
-            } catch {
-              console.error('Upload failed:', { status: xhr.status, response: xhr.responseText });
-              reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.statusText}`));
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              setUploadProgress(percentComplete);
             }
-          }
-        });
-
-        xhr.addEventListener('error', (e) => {
-          console.error('XHR error event:', e);
-          console.error('XHR error details:', {
-            status: xhr.status,
-            statusText: xhr.statusText,
-            readyState: xhr.readyState,
-            responseText: xhr.responseText,
           });
-          reject(new Error(`Network error during upload. This may be a CORS issue. Please ensure R2 CORS is configured to allow PUT requests from ${window.location.origin}`));
-        });
 
-        xhr.addEventListener('abort', () => {
-          console.log('Upload aborted');
-          reject(new Error('Upload was cancelled'));
-        });
-
-        // Upload directly to R2 using presigned URL
-        try {
-          xhr.open('PUT', presignedUrl);
-          xhr.setRequestHeader('Content-Type', file.type);
-          console.log('Starting upload to R2:', { url: presignedUrl.substring(0, 100) + '...', contentType: file.type, size: file.size });
-          xhr.send(file);
-        } catch (error: any) {
-          console.error('Error starting upload:', error);
-          reject(new Error(`Failed to start upload: ${error.message}`));
-        }
-      });
-    } catch (error: any) {
-      console.error('Presigned URL upload failed, falling back to API upload:', error);
-      // Fallback to API upload if presigned URL fails
-      return uploadFileViaAPI(file, fileType);
-    }
-  }
-
-  async function uploadFileViaAPI(file: File, fileType: 'video' | 'thumbnail' | 'attachment'): Promise<string> {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('fileType', fileType);
-    formData.append('chapterId', chapterId);
-    if (episode) {
-      formData.append('episodeId', episode.$id);
-    }
-
-    // Use fetch API with progress tracking
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = (e.loaded / e.total) * 100;
-          setUploadProgress(percentComplete);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            if (response.success && response.url) {
-              resolve(response.url);
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(publicUrl);
             } else {
-              reject(new Error(response.error || 'Upload failed'));
+              const msg = (() => {
+                try {
+                  const body = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+                  return body.error || body.message || body.Code || `Upload failed (${xhr.status})`;
+                } catch {
+                  return `Upload failed with status ${xhr.status}: ${xhr.statusText}`;
+                }
+              })();
+              console.error('Upload failed:', { status: xhr.status, response: xhr.responseText });
+              reject(new Error(msg));
             }
-          } catch (parseError) {
-            reject(new Error('Failed to parse server response'));
-          }
-        } else {
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(
+              new Error(
+                `Network error during upload. This may be a CORS issue. ` +
+                `Please ensure R2 CORS is configured to allow PUT requests from ${window.location.origin}`
+              )
+            );
+          });
+
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload was cancelled'));
+          });
+
           try {
-            const errorResponse = JSON.parse(xhr.responseText);
-            reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
-          } catch {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            xhr.open('PUT', presignedUrl);
+            // Do NOT set Content-Type — the presigned URL is unsigned for
+            // content-type so the browser can send the default, avoiding
+            // SignatureDoesNotMatch errors with varying MIME detection.
+            xhr.send(file);
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            reject(new Error(`Failed to start upload: ${message}`));
           }
-        }
-      });
+        });
 
-      xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-      xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')));
-
-      xhr.open('POST', '/api/admin/upload');
-      // IMPORTANT: Don't set Content-Type header - browser must set it automatically with boundary
-      xhr.setRequestHeader('x-user-id', user.userId);
-      xhr.send(formData);
-    });
+      return attemptUpload();
+    } catch (error: any) {
+      console.error('Presigned URL upload failed:', error);
+      throw error;
+    }
   }
 
   async function handleFileUpload(file: File, type: 'video' | 'thumbnail' | 'attachment') {
@@ -507,7 +441,7 @@ export function EpisodeForm({ chapterId, chapterIsLocked = false, episode, onClo
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        MP4, WebM, or QuickTime (max 500MB)
+                        MP4, WebM, or QuickTime
                       </p>
                     </div>
                   )}

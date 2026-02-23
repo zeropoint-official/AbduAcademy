@@ -17,46 +17,47 @@ interface EpisodeDocument {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all chapters ordered by order field
-    const { documents: chaptersList } = await chapters.list<{
-      $id: string;
-      title: string;
-      description: string;
-      order: number;
-      isLocked: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>([Query.orderAsc('order')]);
+    // Fetch chapters and all episodes in parallel (2 queries instead of 1+N)
+    const [{ documents: chaptersList }, { documents: allEpisodes }] = await Promise.all([
+      chapters.list<{
+        $id: string;
+        title: string;
+        description: string;
+        order: number;
+        isLocked: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>([Query.orderAsc('order')]),
+      episodes.list<EpisodeDocument>([Query.orderAsc('order'), Query.limit(5000)]),
+    ]);
 
-    // Get all episodes grouped by chapter
-    const chaptersWithEpisodes = await Promise.all(
-      chaptersList.map(async (chapter) => {
-        const { documents: chapterEpisodes } = await episodes.list<EpisodeDocument>([
-          Query.equal('chapterId', chapter.$id),
-          Query.orderAsc('order'),
-        ]);
+    // Group episodes by chapter in memory
+    const episodesByChapter = new Map<string, EpisodeDocument[]>();
+    for (const ep of allEpisodes) {
+      const list = episodesByChapter.get(ep.chapterId) || [];
+      list.push(ep);
+      episodesByChapter.set(ep.chapterId, list);
+    }
 
-        return {
-          id: chapter.$id,
-          title: chapter.title,
-          description: chapter.description,
-          order: chapter.order,
-          isLocked: chapter.isLocked,
-          episodes: chapterEpisodes.map((ep) => ({
-            id: ep.$id,
-            chapterId: ep.chapterId,
-            title: ep.title,
-            description: ep.description,
-            duration: ep.duration,
-            order: ep.order,
-            isLocked: ep.isLocked ?? false,
-            videoUrl: ep.videoUrl,
-            thumbnailUrl: ep.thumbnailUrl,
-            attachmentUrls: ep.attachmentUrls || [],
-          })),
-        };
-      })
-    );
+    const chaptersWithEpisodes = chaptersList.map((chapter) => ({
+      id: chapter.$id,
+      title: chapter.title,
+      description: chapter.description,
+      order: chapter.order,
+      isLocked: chapter.isLocked,
+      episodes: (episodesByChapter.get(chapter.$id) || []).map((ep) => ({
+        id: ep.$id,
+        chapterId: ep.chapterId,
+        title: ep.title,
+        description: ep.description,
+        duration: ep.duration,
+        order: ep.order,
+        isLocked: ep.isLocked ?? false,
+        videoUrl: ep.videoUrl,
+        thumbnailUrl: ep.thumbnailUrl,
+        attachmentUrls: ep.attachmentUrls || [],
+      })),
+    }));
 
     return NextResponse.json({ chapters: chaptersWithEpisodes });
   } catch (error: any) {

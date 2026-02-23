@@ -25,44 +25,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all completed payments
-    const completedPayments = await payments.list<PaymentDocument>([
-      Query.equal('status', 'completed'),
-    ]);
+    // Run all independent queries in parallel
+    const [completedPayments, usersWithAccess, allUsers, activeAffiliates, pendingPayouts, recentPayments] =
+      await Promise.all([
+        payments.list<PaymentDocument>([Query.equal('status', 'completed')]),
+        users.list([Query.equal('hasAccess', true)]),
+        users.list([]),
+        affiliates.list([Query.equal('isActive', true)]),
+        payouts.list([Query.equal('status', 'requested')]),
+        payments.list<PaymentDocument>([Query.orderDesc('createdAt'), Query.limit(10)]),
+      ]);
 
-    // Calculate total revenue (sum of all completed payment amounts)
     const totalRevenue = completedPayments.documents.reduce(
       (sum, payment) => sum + (payment.amount || 0),
       0
     );
-
-    // Get all users with access
-    const usersWithAccess = await users.list([
-      Query.equal('hasAccess', true),
-    ]);
     const totalCustomers = usersWithAccess.total;
-
-    // Get total users count
-    const allUsers = await users.list([]);
     const totalUsers = allUsers.total;
-
-    // Get active affiliates
-    const activeAffiliates = await affiliates.list([
-      Query.equal('isActive', true),
-    ]);
     const activeAffiliatesCount = activeAffiliates.total;
-
-    // Get pending payout requests
-    const pendingPayouts = await payouts.list([
-      Query.equal('status', 'requested'),
-    ]);
     const pendingPayoutsCount = pendingPayouts.total;
-
-    // Get recent payments (last 10, ordered by createdAt desc)
-    const recentPayments = await payments.list<PaymentDocument>([
-      Query.orderDesc('createdAt'),
-      Query.limit(10),
-    ]);
 
     return NextResponse.json({
       totalRevenue,

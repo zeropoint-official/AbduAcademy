@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import type { Transition } from "framer-motion"
+import type { Transition } from "motion/react"
 
 interface BorderBeamProps {
   /**

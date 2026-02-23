@@ -132,30 +132,32 @@ export async function DELETE(
       Query.equal('chapterId', id),
     ]);
 
-    // Delete R2 files for all episodes
+    // Delete R2 files for all episodes in parallel
+    const deleteFilePromises: Promise<void>[] = [];
     for (const episode of chapterEpisodes) {
-      try {
-        if (episode.videoUrl) {
-          await deleteFileByUrl(episode.videoUrl);
+      if (episode.videoUrl) {
+        deleteFilePromises.push(deleteFileByUrl(episode.videoUrl));
+      }
+      if (episode.thumbnailUrl) {
+        deleteFilePromises.push(deleteFileByUrl(episode.thumbnailUrl));
+      }
+      if (episode.attachmentUrls && Array.isArray(episode.attachmentUrls)) {
+        for (const url of episode.attachmentUrls) {
+          deleteFilePromises.push(deleteFileByUrl(url));
         }
-        if (episode.thumbnailUrl) {
-          await deleteFileByUrl(episode.thumbnailUrl);
-        }
-        if (episode.attachmentUrls && Array.isArray(episode.attachmentUrls)) {
-          for (const url of episode.attachmentUrls) {
-            await deleteFileByUrl(url);
-          }
-        }
-      } catch (fileError) {
-        console.error(`Error deleting files for episode ${episode.$id}:`, fileError);
-        // Continue even if file deletion fails
+      }
+    }
+    const fileResults = await Promise.allSettled(deleteFilePromises);
+    for (const result of fileResults) {
+      if (result.status === 'rejected') {
+        console.error('Error deleting R2 file:', result.reason);
       }
     }
 
-    // Delete all episodes
-    for (const episode of chapterEpisodes) {
-      await episodes.delete(episode.$id);
-    }
+    // Delete all episodes in parallel
+    await Promise.allSettled(
+      chapterEpisodes.map((episode) => episodes.delete(episode.$id))
+    );
 
     // Delete chapter
     await chapters.delete(id);

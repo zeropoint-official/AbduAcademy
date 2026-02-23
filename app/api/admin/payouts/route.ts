@@ -45,98 +45,92 @@ export async function GET(request: NextRequest) {
       return authResult;
     }
 
-    // Get all payout requests
-    const { documents } = await payouts.list<PayoutDocument>([
-      Query.orderDesc('requestedAt'),
+    // Batch-fetch all data in parallel (4 queries instead of 1+4N)
+    const [{ documents }, allAffiliates, allUsers, allReferrals] = await Promise.all([
+      payouts.list<PayoutDocument>([Query.orderDesc('requestedAt')]),
+      affiliates.list<AffiliateDocument>([Query.limit(5000)]),
+      users.list<UserDocument>([Query.limit(5000)]),
+      affiliateReferrals.list<AffiliateReferralDocument>([Query.limit(5000)]),
     ]);
 
-    // Enrich with affiliate and user information
-    const enrichedPayouts = await Promise.all(
-      documents.map(async (payout) => {
-        let affiliateCode = 'N/A';
-        let affiliateName = 'N/A';
-        let affiliateEmail = 'N/A';
-        let affiliateUserId = null;
-        let buyerName = 'N/A';
-        let buyerEmail = 'N/A';
-        let buyerUserId = null;
+    // Build lookup maps
+    const affiliateMap = new Map<string, AffiliateDocument>();
+    for (const a of allAffiliates.documents) {
+      affiliateMap.set(a.$id, a);
+    }
 
-        try {
-          // Get affiliate information
-          const affiliate = await affiliates.get<AffiliateDocument>(payout.affiliateId);
-          affiliateCode = affiliate.code;
-          affiliateUserId = affiliate.userId;
+    const userMap = new Map<string, UserDocument>();
+    for (const u of allUsers.documents) {
+      userMap.set(u.userId, u);
+    }
 
-          // Get affiliate owner (the person who owns the affiliate code and requested the payout)
-          // Note: affiliate.userId should match payout.requestedBy
-          const affiliateUserDocs = await users.list<UserDocument>([
-            Query.equal('userId', affiliate.userId),
-          ]);
-          if (affiliateUserDocs.documents.length > 0) {
-            affiliateName = affiliateUserDocs.documents[0].name || affiliateUserDocs.documents[0].email;
-            affiliateEmail = affiliateUserDocs.documents[0].email;
-          }
+    const referralMap = new Map<string, AffiliateReferralDocument>();
+    for (const r of allReferrals.documents) {
+      referralMap.set(r.referralId, r);
+    }
 
-          // Get buyer information if referralId exists
-          // The buyer is the person who purchased using the affiliate code (different from affiliate owner)
-          if (payout.referralId) {
-            try {
-              const referralDocs = await affiliateReferrals.list<AffiliateReferralDocument>([
-                Query.equal('referralId', payout.referralId),
-              ]);
-              if (referralDocs.documents.length > 0) {
-                const referral = referralDocs.documents[0];
-                buyerUserId = referral.buyerUserId;
-                // Verify buyerUserId is different from affiliateUserId
-                if (referral.buyerUserId && referral.buyerUserId !== affiliateUserId) {
-                  const buyerUserDocs = await users.list<UserDocument>([
-                    Query.equal('userId', referral.buyerUserId),
-                  ]);
-                  if (buyerUserDocs.documents.length > 0) {
-                    buyerName = buyerUserDocs.documents[0].name || buyerUserDocs.documents[0].email;
-                    buyerEmail = buyerUserDocs.documents[0].email;
-                  }
-                } else {
-                  // If buyerUserId matches affiliateUserId, this is a self-referral
-                  console.warn(`Payout ${payout.payoutId}: buyerUserId (${referral.buyerUserId}) matches affiliateUserId (${affiliateUserId}) - self-referral detected`);
-                  buyerName = 'Self-referral';
-                  buyerEmail = affiliateEmail; // Same person
-                }
-              }
-            } catch (referralError) {
-              console.error('Error fetching referral/buyer data:', referralError);
-            }
-          } else {
-            // No referralId linked - this payout might be for multiple referrals or general earnings
-            buyerName = 'Multiple referrals';
-          }
-        } catch (error) {
-          console.error('Error enriching payout data:', error);
+    const enrichedPayouts = documents.map((payout) => {
+      let affiliateCode = 'N/A';
+      let affiliateName = 'N/A';
+      let affiliateEmail = 'N/A';
+      let affiliateUserId: string | null = null;
+      let buyerName = 'N/A';
+      let buyerEmail = 'N/A';
+      let buyerUserId: string | null = null;
+
+      const affiliate = affiliateMap.get(payout.affiliateId);
+      if (affiliate) {
+        affiliateCode = affiliate.code;
+        affiliateUserId = affiliate.userId;
+
+        const affiliateUser = userMap.get(affiliate.userId);
+        if (affiliateUser) {
+          affiliateName = affiliateUser.name || affiliateUser.email;
+          affiliateEmail = affiliateUser.email;
         }
 
-        return {
-          payoutId: payout.payoutId,
-          affiliateId: payout.affiliateId,
-          affiliateCode,
-          affiliateName,
-          affiliateEmail,
-          affiliateUserId, // For debugging - should match requestedBy
-          requestedBy: payout.requestedBy,
-          buyerName,
-          buyerEmail,
-          buyerUserId, // For debugging - should be different from affiliateUserId
-          amount: payout.amount,
-          status: payout.status,
-          paymentDetails: payout.paymentDetails,
-          referralId: payout.referralId || null,
-          requestedAt: payout.requestedAt,
-          approvedAt: payout.approvedAt || null,
-          completedAt: payout.completedAt || null,
-          rejectionReason: payout.rejectionReason || null,
-          adminNotes: payout.adminNotes || null,
-        };
-      })
-    );
+        if (payout.referralId) {
+          const referral = referralMap.get(payout.referralId);
+          if (referral) {
+            buyerUserId = referral.buyerUserId ?? null;
+            if (referral.buyerUserId && referral.buyerUserId !== affiliateUserId) {
+              const buyerUser = userMap.get(referral.buyerUserId);
+              if (buyerUser) {
+                buyerName = buyerUser.name || buyerUser.email;
+                buyerEmail = buyerUser.email;
+              }
+            } else {
+              buyerName = 'Self-referral';
+              buyerEmail = affiliateEmail;
+            }
+          }
+        } else {
+          buyerName = 'Multiple referrals';
+        }
+      }
+
+      return {
+        payoutId: payout.payoutId,
+        affiliateId: payout.affiliateId,
+        affiliateCode,
+        affiliateName,
+        affiliateEmail,
+        affiliateUserId,
+        requestedBy: payout.requestedBy,
+        buyerName,
+        buyerEmail,
+        buyerUserId,
+        amount: payout.amount,
+        status: payout.status,
+        paymentDetails: payout.paymentDetails,
+        referralId: payout.referralId || null,
+        requestedAt: payout.requestedAt,
+        approvedAt: payout.approvedAt || null,
+        completedAt: payout.completedAt || null,
+        rejectionReason: payout.rejectionReason || null,
+        adminNotes: payout.adminNotes || null,
+      };
+    });
 
     return NextResponse.json({ payouts: enrichedPayouts });
   } catch (error: any) {

@@ -139,13 +139,21 @@ export function extractKeyFromUrl(url: string): string {
 }
 
 /**
- * Generate a presigned URL for direct client-to-R2 uploads
- * This bypasses Next.js body size limits by allowing direct uploads
+ * Generate a presigned URL for direct client-to-R2 uploads.
+ * This bypasses Next.js body size limits by allowing direct uploads.
+ *
+ * NOTE: We intentionally exclude ContentType from the PutObjectCommand so
+ * that the presigned URL signature is not bound to a specific content type.
+ * This prevents SignatureDoesNotMatch errors when the browser-reported MIME
+ * type differs slightly from what was passed during URL generation (common
+ * with video files of varying sizes where browsers may sniff types differently).
+ * The client still sends the correct Content-Type header; it just isn't
+ * enforced by the signature.
  */
 export async function generatePresignedUploadUrl({
   key,
-  contentType,
-  expiresIn = 3600, // 1 hour default
+  contentType: _contentType,
+  expiresIn = 3600,
   metadata = {},
 }: {
   key: string;
@@ -155,15 +163,17 @@ export async function generatePresignedUploadUrl({
 }): Promise<string> {
   validateR2Config();
   const client = getR2Client();
-  
+
   const command = new PutObjectCommand({
     Bucket: R2_BUCKET_NAME!,
     Key: key,
-    ContentType: contentType,
     Metadata: metadata,
   });
 
-  const presignedUrl = await getSignedUrl(client, command, { expiresIn });
+  const presignedUrl = await getSignedUrl(client, command, {
+    expiresIn,
+    signableHeaders: new Set(['host']),
+  });
   return presignedUrl;
 }
 

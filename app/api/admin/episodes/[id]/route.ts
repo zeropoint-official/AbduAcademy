@@ -141,22 +141,24 @@ export async function DELETE(
     // Get episode to access file URLs
     const episode = await episodes.get<EpisodeDocument>(id);
 
-    // Delete R2 files
-    try {
-      if (episode.videoUrl) {
-        await deleteFileByUrl(episode.videoUrl);
+    // Delete R2 files in parallel
+    const deletePromises: Promise<void>[] = [];
+    if (episode.videoUrl) {
+      deletePromises.push(deleteFileByUrl(episode.videoUrl));
+    }
+    if (episode.thumbnailUrl) {
+      deletePromises.push(deleteFileByUrl(episode.thumbnailUrl));
+    }
+    if (episode.attachmentUrls && Array.isArray(episode.attachmentUrls)) {
+      for (const url of episode.attachmentUrls) {
+        deletePromises.push(deleteFileByUrl(url));
       }
-      if (episode.thumbnailUrl) {
-        await deleteFileByUrl(episode.thumbnailUrl);
+    }
+    const results = await Promise.allSettled(deletePromises);
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error(`Error deleting R2 file for episode ${id}:`, result.reason);
       }
-      if (episode.attachmentUrls && Array.isArray(episode.attachmentUrls)) {
-        for (const url of episode.attachmentUrls) {
-          await deleteFileByUrl(url);
-        }
-      }
-    } catch (fileError) {
-      console.error(`Error deleting files for episode ${id}:`, fileError);
-      // Continue even if file deletion fails
     }
 
     // Delete episode

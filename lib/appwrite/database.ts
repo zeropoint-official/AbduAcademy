@@ -3,10 +3,14 @@ import { Databases as ServerDatabases } from 'node-appwrite';
 import { getServerClient } from './config';
 import { DATABASE_ID, COLLECTIONS } from './config';
 
-// Get server-side databases instance
+// Cached at module scope so the same instance is reused within a serverless invocation
+let _databases: ServerDatabases | null = null;
+
 function getDatabases(): ServerDatabases {
+  if (_databases) return _databases;
   const client = getServerClient();
-  return new ServerDatabases(client);
+  _databases = new ServerDatabases(client);
+  return _databases;
 }
 
 // Generic CRUD helpers

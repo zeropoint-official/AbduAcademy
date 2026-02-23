@@ -17,7 +17,7 @@ import {
 import { BlurFade } from "@/components/ui/blur-fade";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { BorderBeam } from "@/components/ui/border-beam";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 const modules = [
   {

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chapters, episodes } from '@/lib/appwrite/database';
-import { Query } from 'appwrite';
+import { Query, ID } from 'appwrite';
 import { getServerUser } from '@/lib/appwrite/server-auth';
-import { ID } from 'appwrite';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,27 +14,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all chapters ordered by order field
-    const { documents } = await chapters.list<{
-      $id: string;
-      title: string;
-      description: string;
-      order: number;
-      isLocked: boolean;
-      createdAt: string;
-      updatedAt: string;
-    }>([Query.orderAsc('order')]);
+    // Fetch chapters and all episodes in parallel (2 queries instead of 1+N)
+    const [{ documents }, allEpisodes] = await Promise.all([
+      chapters.list<{
+        $id: string;
+        title: string;
+        description: string;
+        order: number;
+        isLocked: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>([Query.orderAsc('order')]),
+      episodes.list<{ chapterId: string }>([Query.limit(5000)]),
+    ]);
 
-    // Get episode counts for each chapter
-    const chaptersWithCounts = await Promise.all(
-      documents.map(async (chapter) => {
-        const { total } = await episodes.list([Query.equal('chapterId', chapter.$id)]);
-        return {
-          ...chapter,
-          episodeCount: total,
-        };
-      })
-    );
+    // Count episodes per chapter in memory
+    const episodeCounts = new Map<string, number>();
+    for (const ep of allEpisodes.documents) {
+      episodeCounts.set(ep.chapterId, (episodeCounts.get(ep.chapterId) || 0) + 1);
+    }
+
+    const chaptersWithCounts = documents.map((chapter) => ({
+      ...chapter,
+      episodeCount: episodeCounts.get(chapter.$id) || 0,
+    }));
 
     return NextResponse.json({ chapters: chaptersWithCounts });
   } catch (error: any) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Play, CheckCircle, Lock } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { Episode } from "@/lib/courses/api";

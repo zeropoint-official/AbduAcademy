@@ -47,9 +47,10 @@ export async function getCurrentUser(): Promise<User | null> {
     // Get user from Appwrite Auth
     const appwriteUser = await account.get();
     
-    // Check if user has 'admin' label in Appwrite
+    // Check Appwrite Auth labels
     const hasAdminLabel = appwriteUser.labels?.includes('admin') ?? false;
-    
+    const hasPaidLabel = appwriteUser.labels?.includes('paid') ?? false;
+
     // Get user data from our users collection via API
     try {
       const response = await fetch('/api/auth/get-user', {
@@ -66,25 +67,28 @@ export async function getCurrentUser(): Promise<User | null> {
         
         // Sync role from Appwrite labels if they don't match
         if (hasAdminLabel && user.role !== 'admin') {
-          // Update role in database via API
           try {
             await fetch('/api/auth/update-user-role', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
-              body: JSON.stringify({ 
-                userId: user.userId, 
-                role: 'admin' 
+              body: JSON.stringify({
+                userId: user.userId,
+                role: 'admin'
               }),
             });
             user.role = 'admin';
           } catch (updateError) {
             console.error('Error updating user role:', updateError);
-            // Still return user with admin role set locally
             user.role = 'admin';
           }
         }
-        
+
+        // Sync access from "paid" label — if user has "paid" or "admin" label, grant access
+        if ((hasPaidLabel || hasAdminLabel) && !user.hasAccess) {
+          user.hasAccess = true;
+        }
+
         return user;
       }
 

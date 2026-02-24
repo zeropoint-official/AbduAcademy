@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { episodes, chapters, users, Query } from '@/lib/appwrite/database';
+import { getServerClient } from '@/lib/appwrite/config';
+import { Users as ServerUsers } from 'node-appwrite';
 
 interface EpisodeDocument {
   $id: string;
@@ -52,6 +54,21 @@ export async function GET(
         try {
           const userDocs = await users.list<UserDocument>([Query.equal('userId', userId)]);
           userHasAccess = userDocs.documents.length > 0 && (userDocs.documents[0].hasAccess === true);
+
+          // Also check Appwrite Auth labels ("paid" or "admin" = access)
+          if (!userHasAccess) {
+            try {
+              const serverClient = getServerClient();
+              const serverUsers = new ServerUsers(serverClient);
+              const appwriteUser = await serverUsers.get(userId);
+              const labels = appwriteUser.labels ?? [];
+              if (labels.includes('paid') || labels.includes('admin')) {
+                userHasAccess = true;
+              }
+            } catch {
+              // Label check failed — fall back to DB value
+            }
+          }
         } catch {
           // User lookup failed — no access
         }

@@ -32,21 +32,23 @@ export async function POST(request: NextRequest) {
         const serverUsers = new ServerUsers(serverClient);
         const appwriteUser = await serverUsers.get(userId);
         
-        // Check if user has 'admin' label
+        // Check Appwrite Auth labels
         const hasAdminLabel = appwriteUser.labels?.includes('admin') ?? false;
-        const shouldBeAdmin = hasAdminLabel;
+        const hasPaidLabel = appwriteUser.labels?.includes('paid') ?? false;
         const currentRole = user.role || 'student';
-        
-        // Update role in database if it doesn't match Appwrite labels
-        if (shouldBeAdmin && currentRole !== 'admin') {
-          await users.update(userId, { 
+
+        // Sync admin role from label
+        if (hasAdminLabel && currentRole !== 'admin') {
+          await users.update(userId, {
             role: 'admin',
             updatedAt: new Date().toISOString()
           });
           user.role = 'admin';
-        } else if (!shouldBeAdmin && currentRole === 'admin') {
-          // Only remove admin role if explicitly not admin (don't auto-demote)
-          // This is a safety measure - admin removal should be manual
+        }
+
+        // Grant access if user has "paid" or "admin" label
+        if ((hasPaidLabel || hasAdminLabel) && !(user as any).hasAccess) {
+          (user as any).hasAccess = true;
         }
       } catch (labelError: any) {
         // If we can't check labels (e.g., API key doesn't have permissions), 

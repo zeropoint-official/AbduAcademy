@@ -86,14 +86,15 @@ export async function getServerUserFromId(userId: string): Promise<User | null> 
     
     const user = userDocs.documents[0];
     
-    // Check Appwrite Auth labels to sync role
+    // Check Appwrite Auth labels to sync role and access
     try {
       const serverClient = getServerClient();
       const serverUsers = new ServerUsers(serverClient);
       const appwriteUser = await serverUsers.get(userId);
-      
+
       const hasAdminLabel = appwriteUser.labels?.includes('admin') ?? false;
-      
+      const hasPaidLabel = appwriteUser.labels?.includes('paid') ?? false;
+
       if (hasAdminLabel && user.role !== 'admin') {
         await users.update(user.$id, {
           role: 'admin',
@@ -101,10 +102,15 @@ export async function getServerUserFromId(userId: string): Promise<User | null> 
         });
         user.role = 'admin';
       }
+
+      // Grant access if user has "paid" or "admin" label
+      if ((hasPaidLabel || hasAdminLabel) && !(user as any).hasAccess) {
+        (user as any).hasAccess = true;
+      }
     } catch (labelError: any) {
       console.warn('Could not check Appwrite labels:', labelError.message);
     }
-    
+
     return user as User;
   } catch (error: any) {
     console.error('Error getting server user from ID:', error);

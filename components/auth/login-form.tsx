@@ -14,7 +14,7 @@ interface LoginFormProps {
   redirectTo?: string;
 }
 
-export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
+export function LoginForm({ redirectTo = '/course/dashboard' }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,7 +123,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Don't have an account? </span>
           <Link
-            href={`/register${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
+            href={`/register?redirect=${encodeURIComponent(redirectTo)}`}
             className="font-medium text-primary hover:underline inline-flex items-center gap-1"
           >
             Sign up

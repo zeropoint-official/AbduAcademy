@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CourseSidebar } from '@/components/course/course-sidebar';
 import { getCurrentUser } from '@/lib/appwrite/auth';
 import type { User } from '@/lib/appwrite/auth';
@@ -11,6 +12,7 @@ export default function CourseLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +22,14 @@ export default function CourseLayout({
 
   async function checkAccess() {
     const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      router.push('/login?redirect=/course/dashboard');
+      return;
+    }
+    if (!currentUser.hasAccess && currentUser.role !== 'admin') {
+      router.push('/payment');
+      return;
+    }
     setUser(currentUser);
     setLoading(false);
   }

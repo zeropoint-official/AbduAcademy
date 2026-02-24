@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { episodes } from '@/lib/appwrite/database';
+import { episodes, chapters, users, Query } from '@/lib/appwrite/database';
 
 interface EpisodeDocument {
   $id: string;
@@ -14,13 +14,51 @@ interface EpisodeDocument {
   attachmentUrls?: string[];
 }
 
+interface ChapterDocument {
+  $id: string;
+  isLocked: boolean;
+}
+
+interface UserDocument {
+  $id: string;
+  userId: string;
+  hasAccess?: boolean;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chapterId: string; episodeId: string }> }
 ) {
   try {
-    const { episodeId } = await params;
+    const { chapterId, episodeId } = await params;
     const episode = await episodes.get<EpisodeDocument>(episodeId);
+
+    const isEpisodeLocked = episode.isLocked ?? false;
+
+    let isChapterLocked = false;
+    try {
+      const chapter = await chapters.get<ChapterDocument>(chapterId);
+      isChapterLocked = chapter.isLocked ?? false;
+    } catch {
+      // Chapter lookup failed — treat as not locked
+    }
+
+    const contentLocked = isEpisodeLocked || isChapterLocked;
+
+    let userHasAccess = false;
+    if (contentLocked) {
+      const userId = request.headers.get('x-user-id');
+      if (userId) {
+        try {
+          const userDocs = await users.list<UserDocument>([Query.equal('userId', userId)]);
+          userHasAccess = userDocs.documents.length > 0 && (userDocs.documents[0].hasAccess === true);
+        } catch {
+          // User lookup failed — no access
+        }
+      }
+    }
+
+    const shouldStripVideo = contentLocked && !userHasAccess;
 
     return NextResponse.json({
       episode: {
@@ -30,8 +68,8 @@ export async function GET(
         description: episode.description,
         duration: episode.duration,
         order: episode.order,
-        isLocked: episode.isLocked ?? false,
-        videoUrl: episode.videoUrl,
+        isLocked: isEpisodeLocked,
+        videoUrl: shouldStripVideo ? undefined : episode.videoUrl,
         thumbnailUrl: episode.thumbnailUrl,
         attachmentUrls: episode.attachmentUrls || [],
       },

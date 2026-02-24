@@ -20,7 +20,7 @@ function LoginContent() {
       const user = await getCurrentUser();
       if (user) {
         // User is already logged in, redirect to specified page or homepage
-        const redirect = searchParams.get('redirect') || '/';
+        const redirect = searchParams.get('redirect') || '/course/dashboard';
         router.push(redirect);
         return;
       }
@@ -50,7 +50,7 @@ function LoginContent() {
       <div className="relative z-10">
         <main className="container mx-auto px-6 py-12 lg:py-20">
           <div className="flex items-center justify-center min-h-screen">
-            <LoginForm redirectTo={searchParams.get('redirect') || '/'} />
+            <LoginForm redirectTo={searchParams.get('redirect') || '/course/dashboard'} />
           </div>
         </main>
       </div>

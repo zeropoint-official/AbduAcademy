@@ -11,6 +11,7 @@ import { getAllChapters, getCourseDuration } from '@/lib/courses/api';
 import type { Chapter } from '@/lib/courses/api';
 import { staggerContainer, staggerItem, heroContainer, heroElement, heroTitle } from '@/lib/animations';
 import type { User } from '@/lib/appwrite/auth';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Radio } from '@phosphor-icons/react';
@@ -26,6 +27,7 @@ interface AffiliateStats {
 }
 
 export default function CourseDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,8 @@ export default function CourseDashboard() {
 
   useEffect(() => {
     async function init() {
-      await checkAccess();
+      const authed = await checkAccess();
+      if (!authed) return;
       await loadCourseData();
       await loadAffiliateStats();
       await loadLiveSession();
@@ -55,9 +58,18 @@ export default function CourseDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  async function checkAccess() {
+  async function checkAccess(): Promise<boolean> {
     const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      router.push('/login?redirect=/course/dashboard');
+      return false;
+    }
+    if (!currentUser.hasAccess && currentUser.role !== 'admin') {
+      router.push('/payment');
+      return false;
+    }
     setUser(currentUser);
+    return true;
   }
 
   async function loadCourseData() {

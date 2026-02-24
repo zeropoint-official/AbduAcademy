@@ -101,12 +101,12 @@ export function PricingSection() {
                     Your course access will be linked to your account. Register or log in to proceed with the purchase.
                   </p>
                   <div className="space-y-3">
-                    <Link href="/register">
+                    <Link href="/register?redirect=/payment">
                       <Button size="lg" className="w-full">
                         Create Account
                       </Button>
                     </Link>
-                    <Link href="/login">
+                    <Link href="/login?redirect=/payment">
                       <Button size="lg" variant="outline" className="w-full">
                         Already have an account? Log In
                       </Button>

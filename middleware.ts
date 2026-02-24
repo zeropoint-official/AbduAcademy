@@ -35,9 +35,11 @@ export async function middleware(request: NextRequest) {
 
   if (hasSession) {
     // User appears to be authenticated
-    // Redirect from auth pages to dashboard
+    // Redirect from auth pages — honor ?redirect param if present
     if (authRoutes.includes(pathname)) {
-      return NextResponse.redirect(new URL('/course/dashboard', request.url));
+      const redirectTo = request.nextUrl.searchParams.get('redirect');
+      const destination = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/course/dashboard';
+      return NextResponse.redirect(new URL(destination, request.url));
     }
     
     // For admin routes, allow access (client-side will check admin status)
@@ -56,9 +58,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     
-    // For other protected routes, redirect to homepage (early access page)
+    // For other protected routes, redirect to login with redirect param
     if (!publicRoutes.includes(pathname)) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
     }
   }
 

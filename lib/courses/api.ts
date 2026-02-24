@@ -57,10 +57,15 @@ export async function getChapterById(id: string): Promise<Chapter | null> {
  */
 export async function getEpisodeById(
   chapterId: string,
-  episodeId: string
+  episodeId: string,
+  userId?: string
 ): Promise<Episode | null> {
   try {
-    const response = await fetch(`/api/courses/episodes/${chapterId}/${episodeId}`);
+    const headers: Record<string, string> = {};
+    if (userId) {
+      headers['x-user-id'] = userId;
+    }
+    const response = await fetch(`/api/courses/episodes/${chapterId}/${episodeId}`, { headers });
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error('Failed to fetch episode');

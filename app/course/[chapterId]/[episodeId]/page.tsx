@@ -47,11 +47,12 @@ export default function EpisodePage({ params }: EpisodePageProps) {
   useEffect(() => {
     async function loadEpisode() {
       try {
-        const [allChapters, episodeData, currentUser] = await Promise.all([
+        const [allChapters, currentUser] = await Promise.all([
           getAllChapters(),
-          getEpisodeById(chapterId, episodeId),
           getCurrentUser(),
         ]);
+
+        const episodeData = await getEpisodeById(chapterId, episodeId, currentUser?.userId);
 
         const chapterData = allChapters.find((ch) => ch.id === chapterId) ?? null;
         const [nextData, prevData] = await Promise.all([

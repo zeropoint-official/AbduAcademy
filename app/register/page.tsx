@@ -20,7 +20,7 @@ function RegisterContent() {
       const user = await getCurrentUser();
       if (user) {
         // User is already logged in, redirect to specified page or homepage
-        const redirect = searchParams.get('redirect') || '/';
+        const redirect = searchParams.get('redirect') || '/payment';
         router.push(redirect);
         return;
       }
@@ -50,7 +50,7 @@ function RegisterContent() {
       <div className="relative z-10">
         <main className="container mx-auto px-6 py-12 lg:py-20">
           <div className="flex items-center justify-center min-h-screen">
-            <RegisterForm redirectTo={searchParams.get('redirect') || '/'} />
+            <RegisterForm redirectTo={searchParams.get('redirect') || '/payment'} />
           </div>
         </main>
       </div>

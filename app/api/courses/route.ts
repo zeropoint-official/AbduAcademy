@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
         duration: ep.duration,
         order: ep.order,
         isLocked: ep.isLocked ?? false,
-        videoUrl: ep.videoUrl,
         thumbnailUrl: ep.thumbnailUrl,
         attachmentUrls: ep.attachmentUrls || [],
       })),

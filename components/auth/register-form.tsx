@@ -14,7 +14,7 @@ interface RegisterFormProps {
   redirectTo?: string;
 }
 
-export function RegisterForm({ redirectTo = '/' }: RegisterFormProps) {
+export function RegisterForm({ redirectTo = '/payment' }: RegisterFormProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -213,7 +213,7 @@ export function RegisterForm({ redirectTo = '/' }: RegisterFormProps) {
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>
           <Link
-            href={`/login${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
+            href={`/login?redirect=${encodeURIComponent(redirectTo)}`}
             className="font-medium text-primary hover:underline inline-flex items-center gap-1"
           >
             Sign in

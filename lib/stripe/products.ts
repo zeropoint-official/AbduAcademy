@@ -34,11 +34,20 @@ export async function syncProductToStripe(productId: string) {
 
     // Create or update Stripe product
     if (stripeProductId) {
-      // Update existing product
-      await stripe.products.update(stripeProductId, {
-        name: product.name,
-        description: product.description,
-      });
+      try {
+        // Try to update existing product
+        await stripe.products.update(stripeProductId, {
+          name: product.name,
+          description: product.description,
+        });
+      } catch {
+        // Product doesn't exist in this mode (e.g. test vs live mismatch) — create new
+        const stripeProduct = await stripe.products.create({
+          name: product.name,
+          description: product.description,
+        });
+        stripeProductId = stripeProduct.id;
+      }
     } else {
       // Create new product
       const stripeProduct = await stripe.products.create({

@@ -52,25 +52,24 @@ export async function GET(
       const userId = request.headers.get('x-user-id');
       if (userId) {
         try {
-          const userDocs = await users.list<UserDocument>([Query.equal('userId', userId)]);
-          userHasAccess = userDocs.documents.length > 0 && (userDocs.documents[0].hasAccess === true);
+          // Check Appwrite Auth labels as the source of truth for access
+          const serverClient = getServerClient();
+          const serverUsers = new ServerUsers(serverClient);
+          const appwriteUser = await serverUsers.get(userId);
+          const labels = appwriteUser.labels ?? [];
+          if (labels.includes('paid') || labels.includes('admin')) {
+            userHasAccess = true;
+          }
 
-          // Also check Appwrite Auth labels ("paid" or "admin" = access)
+          // Also grant access if user has admin role in DB
           if (!userHasAccess) {
-            try {
-              const serverClient = getServerClient();
-              const serverUsers = new ServerUsers(serverClient);
-              const appwriteUser = await serverUsers.get(userId);
-              const labels = appwriteUser.labels ?? [];
-              if (labels.includes('paid') || labels.includes('admin')) {
-                userHasAccess = true;
-              }
-            } catch {
-              // Label check failed — fall back to DB value
+            const userDocs = await users.list<UserDocument>([Query.equal('userId', userId)]);
+            if (userDocs.documents.length > 0 && (userDocs.documents[0] as any).role === 'admin') {
+              userHasAccess = true;
             }
           }
         } catch {
-          // User lookup failed — no access
+          // Access check failed — no access
         }
       }
     }

@@ -103,10 +103,9 @@ export async function getServerUserFromId(userId: string): Promise<User | null> 
         user.role = 'admin';
       }
 
-      // Grant access if user has "paid" or "admin" label
-      if ((hasPaidLabel || hasAdminLabel) && !(user as any).hasAccess) {
-        (user as any).hasAccess = true;
-      }
+      // Derive access strictly from Appwrite Auth labels (source of truth)
+      // DB hasAccess field alone is NOT sufficient — must have paid/admin label or admin role
+      (user as any).hasAccess = hasPaidLabel || hasAdminLabel || user.role === 'admin';
     } catch (labelError: any) {
       console.warn('Could not check Appwrite labels:', labelError.message);
     }

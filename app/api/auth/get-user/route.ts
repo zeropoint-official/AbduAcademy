@@ -46,10 +46,9 @@ export async function POST(request: NextRequest) {
           user.role = 'admin';
         }
 
-        // Grant access if user has "paid" or "admin" label
-        if ((hasPaidLabel || hasAdminLabel) && !(user as any).hasAccess) {
-          (user as any).hasAccess = true;
-        }
+        // Derive access strictly from Appwrite Auth labels (source of truth)
+        // DB hasAccess field alone is NOT sufficient — must have paid/admin label or admin role
+        (user as any).hasAccess = hasPaidLabel || hasAdminLabel || (user.role === 'admin');
       } catch (labelError: any) {
         // If we can't check labels (e.g., API key doesn't have permissions), 
         // just return the user as-is

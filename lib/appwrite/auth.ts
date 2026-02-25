@@ -84,10 +84,9 @@ export async function getCurrentUser(): Promise<User | null> {
           }
         }
 
-        // Sync access from "paid" label — if user has "paid" or "admin" label, grant access
-        if ((hasPaidLabel || hasAdminLabel) && !user.hasAccess) {
-          user.hasAccess = true;
-        }
+        // Derive access strictly from Appwrite Auth labels (source of truth)
+        // DB hasAccess field alone is NOT sufficient — must have paid/admin label or admin role
+        user.hasAccess = hasPaidLabel || hasAdminLabel || user.role === 'admin';
 
         return user;
       }

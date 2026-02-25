@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe/config';
 import { payments, users, affiliates, affiliateReferrals } from '@/lib/appwrite/database';
+import { getServerClient } from '@/lib/appwrite/config';
+import { Users as ServerUsers } from 'node-appwrite';
 import { ID, Query } from 'appwrite';
 import Stripe from 'stripe';
 import { sendPaymentConfirmationEmail } from '@/lib/resend/send-email';
@@ -202,6 +204,21 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
   } catch (error: any) {
     console.error('[Webhook] Failed to update user access:', error);
     throw error; // Fail webhook if user access update fails
+  }
+
+  // Add "paid" label to Appwrite Auth (source of truth for access control)
+  try {
+    const serverClient = getServerClient();
+    const serverUsers = new ServerUsers(serverClient);
+    const appwriteUser = await serverUsers.get(userId);
+    const existingLabels = appwriteUser.labels ?? [];
+    if (!existingLabels.includes('paid')) {
+      await serverUsers.updateLabels(userId, [...existingLabels, 'paid']);
+      console.log(`[Webhook] Added "paid" label to Appwrite Auth for user: ${userId}`);
+    }
+  } catch (labelError: any) {
+    console.error('[Webhook] Failed to add "paid" label (non-critical):', labelError.message);
+    // Don't throw — DB access was already granted, label is supplementary
   }
 
   // Process affiliate earnings if affiliate code was used

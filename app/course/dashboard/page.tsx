@@ -375,7 +375,7 @@ export default function CourseDashboard() {
                   <p className="text-sm text-muted-foreground">
                     Connect with fellow traders, share strategies, and get support
                   </p>
-                  <Link href="https://discord.gg/abduacademy" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center whitespace-nowrap rounded-4xl border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1 px-3 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 w-full">
+                  <Link href="https://discord.gg/Mnnp3E9w4k" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center whitespace-nowrap rounded-4xl border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1 px-3 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 w-full">
                     <ChatCircle className="h-4 w-4 mr-2" weight="fill" />
                     Join Discord
                   </Link>
